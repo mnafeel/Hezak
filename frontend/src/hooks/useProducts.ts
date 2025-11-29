@@ -1,10 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchProducts } from '../lib/api';
+import type { Product } from '../types';
 
 export const useProducts = (categorySlug?: string) => {
-  return useQuery({
+  return useQuery<Product[]>({
     queryKey: ['products', categorySlug ?? 'all'],
-    queryFn: () => fetchProducts(categorySlug)
+    queryFn: async () => {
+      const data = await fetchProducts(categorySlug);
+      return Array.isArray(data) ? data : [];
+    },
+    initialData: []
   });
 };
 

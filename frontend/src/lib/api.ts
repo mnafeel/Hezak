@@ -15,15 +15,27 @@ import type {
 } from '../types';
 
 export const fetchProducts = async (category?: string): Promise<Product[]> => {
-  const response = await apiClient.get<Product[]>('/products', {
-    params: category ? { category } : undefined
-  });
-  return response.data;
+  try {
+    const response = await apiClient.get<Product[]>('/products', {
+      params: category ? { category } : undefined
+    });
+    const data = response.data;
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    return [];
+  }
 };
 
 export const fetchCategories = async (): Promise<Category[]> => {
-  const response = await apiClient.get<Category[]>('/categories');
-  return response.data;
+  try {
+    const response = await apiClient.get<Category[]>('/categories');
+    const data = response.data;
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    return [];
+  }
 };
 
 export const fetchAdminCategories = async (): Promise<Category[]> => {
@@ -183,8 +195,10 @@ export const uploadVideo = async (file: File): Promise<UploadImageResponse> => {
 export const fetchBanners = async (): Promise<Banner[]> => {
   try {
     const response = await apiClient.get<any[]>('/banners');
+    const data = response.data;
+    if (!Array.isArray(data)) return [];
     // Parse textElements from JSON if needed
-    return response.data.map(banner => ({
+    return data.map(banner => ({
       ...banner,
       textElements: (() => {
         if (Array.isArray(banner.textElements)) {
@@ -202,29 +216,36 @@ export const fetchBanners = async (): Promise<Banner[]> => {
     }));
   } catch (error) {
     console.error('Error fetching banners:', error);
-    throw error;
+    return [];
   }
 };
 
 export const fetchActiveBanners = async (): Promise<Banner[]> => {
-  const response = await apiClient.get<any[]>('/banners/active');
-  // Parse textElements from JSON if needed
-  return response.data.map(banner => ({
-    ...banner,
-    textElements: (() => {
-      if (Array.isArray(banner.textElements)) {
-        return banner.textElements;
-      }
-      if (typeof banner.textElements === 'string' && banner.textElements.trim()) {
-        try {
-          return JSON.parse(banner.textElements);
-        } catch {
-          return [];
+  try {
+    const response = await apiClient.get<any[]>('/banners/active');
+    const data = response.data;
+    if (!Array.isArray(data)) return [];
+    // Parse textElements from JSON if needed
+    return data.map(banner => ({
+      ...banner,
+      textElements: (() => {
+        if (Array.isArray(banner.textElements)) {
+          return banner.textElements;
         }
-      }
-      return [];
-    })()
-  }));
+        if (typeof banner.textElements === 'string' && banner.textElements.trim()) {
+          try {
+            return JSON.parse(banner.textElements);
+          } catch {
+            return [];
+          }
+        }
+        return [];
+      })()
+    }));
+  } catch (error) {
+    console.error('Error fetching active banners:', error);
+    return [];
+  }
 };
 
 export const createBanner = async (payload: BannerFormPayload): Promise<Banner> => {

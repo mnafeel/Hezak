@@ -20,6 +20,7 @@ const HomePage = () => {
   const theme = useThemeStore((state) => state.theme);
 
   const topSellingProducts = useMemo<Product[]>(() => {
+    if (!Array.isArray(categories) || !Array.isArray(allProducts)) return [];
     const topSellingCategoryIds = categories
       .filter((cat) => cat.isTopSelling)
       .map((cat) => cat.id);
@@ -31,6 +32,7 @@ const HomePage = () => {
   }, [allProducts, categories]);
 
   const featuredProducts = useMemo<Product[]>(() => {
+    if (!Array.isArray(categories) || !Array.isArray(allProducts)) return [];
     // Get products from featured categories
     const featuredCategoryIds = categories
       .filter((cat) => cat.isFeatured)
@@ -39,7 +41,7 @@ const HomePage = () => {
       .filter(
         (product) => product.category && featuredCategoryIds.includes(product.category.id)
       )
-      .slice(0, featuredCount);
+      .slice(0, featuredCount ?? 8);
   }, [allProducts, categories, featuredCount]);
 
   const handleExplore = () => {
