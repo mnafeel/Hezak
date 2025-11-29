@@ -1,0 +1,142 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String @unique
+  passwordHash String?
+  phone        String?
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  postalCode   String?
+  country      String?
+  createdAt    DateTime @default(now())
+  orders       Order[]
+}
+
+model Category {
+  id           Int       @id @default(autoincrement())
+  name         String    @unique
+  slug         String    @unique
+  description  String?
+  isTopSelling Boolean   @default(false)
+  isFeatured   Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  products     ProductCategory[]
+}
+
+model Product {
+  id               Int        @id @default(autoincrement())
+  name             String
+  description      String
+  priceCents       Int
+  imageUrl         String
+  gallery          Json       @default("[]")
+  colors           Json       @default("[]")
+  sizes            Json       @default("[]")
+  itemType         String     @default("")
+  inventory        Int        @default(0)
+  inventoryVariants Json      @default("[]")
+  isFeatured       Boolean    @default(false)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  categories       ProductCategory[]
+  orderItems       OrderItem[]
+}
+
+model ProductCategory {
+  id         Int      @id @default(autoincrement())
+  productId  Int
+  categoryId Int
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([productId, categoryId])
+  @@index([productId])
+  @@index([categoryId])
+}
+
+model Order {
+  id             Int          @id @default(autoincrement())
+  status         OrderStatus  @default(PENDING)
+  totalCents     Int
+  trackingId     String?
+  courierCompany String?
+  trackingLink   String?
+  orderSource    String?      @default("WEBSITE")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now()) @updatedAt
+  userId         Int
+  user           User         @relation(fields: [userId], references: [id])
+  orderItems     OrderItem[]
+}
+
+model OrderItem {
+  id        Int      @id @default(autoincrement())
+  quantity  Int
+  unitPriceCents Int
+  orderId   Int
+  productId Int
+  selectedColor      String?
+  selectedColorHex   String?
+  selectedColorImage String?
+  selectedSize       String?
+  order     Order    @relation(fields: [orderId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model AppSetting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model Banner {
+  id          Int      @id @default(autoincrement())
+  title       String?
+  text        String?
+  imageUrl    String
+  videoUrl    String?  // Optional video URL for video banners
+  mediaType   String   @default("image") // "image" or "video"
+  linkUrl     String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  textPosition String? @default("bottom-left")
+  textAlign   String?  @default("left")
+  animationStyle String? @default("fade")
+  overlayStyle String? @default("gradient")
+  textElements Json    @default("[]") // Array of text elements with individual positions and styles
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SiteSettings {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}

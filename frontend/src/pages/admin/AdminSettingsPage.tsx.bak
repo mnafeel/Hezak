@@ -1,0 +1,248 @@
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { toast } from 'react-hot-toast';
+import { useNavigate, useParams } from 'react-router-dom';
+import Card from '../../components/ui/Card';
+import Input from '../../components/ui/Input';
+import Button from '../../components/ui/Button';
+import { useAdminPath, useUpdateAdminPath } from '../../hooks/useAdminPath';
+import { useFeaturedCount, useUpdateFeaturedCount } from '../../hooks/useFeaturedCount';
+import { useAdminAuthStore } from '../../store/adminAuth';
+
+interface AdminPathForm {
+  adminPath: string;
+}
+
+interface FeaturedCountForm {
+  featuredCount: number;
+}
+
+const AdminSettingsPage = () => {
+  const { adminSlug } = useParams<{ adminSlug: string }>();
+  const navigate = useNavigate();
+  const { clearAuth } = useAdminAuthStore();
+  const { data, isLoading } = useAdminPath();
+  const { mutateAsync, isPending } = useUpdateAdminPath();
+  const featuredCountData = useFeaturedCount();
+  const { mutateAsync: updateFeaturedCount, isPending: isUpdatingFeatured } = useUpdateFeaturedCount();
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors }
+  } = useForm<AdminPathForm>({
+    defaultValues: {
+      adminPath: data?.adminPath ?? ''
+    }
+  });
+  
+  const {
+    register: registerFeatured,
+    handleSubmit: handleSubmitFeatured,
+    reset: resetFeatured,
+    formState: { errors: featuredErrors }
+  } = useForm<FeaturedCountForm>({
+    defaultValues: {
+      featuredCount: featuredCountData.data ?? 3
+    }
+  });
+
+  useEffect(() => {
+    if (data?.adminPath) {
+      reset({ adminPath: data.adminPath });
+    }
+  }, [data, reset]);
+  
+  useEffect(() => {
+    if (featuredCountData.data !== undefined) {
+      resetFeatured({ featuredCount: featuredCountData.data });
+    }
+  }, [featuredCountData.data, resetFeatured]);
+
+  const onSubmit = async (values: AdminPathForm) => {
+    try {
+      const result = await mutateAsync({ adminPath: values.adminPath });
+      toast.success(`Admin path updated. Use /${result.adminPath} to access the console.`);
+
+      // Clear auth to force re-login at new path
+      clearAuth();
+      navigate(`/${result.adminPath}/login`, { replace: true });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update admin path';
+      toast.error(message);
+    }
+  };
+  
+  const onSubmitFeatured = async (values: FeaturedCountForm) => {
+    try {
+      await updateFeaturedCount({ featuredCount: values.featuredCount });
+      toast.success(`Featured items count updated to ${values.featuredCount}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update featured count';
+      toast.error(message);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card title="Admin access settings">
+        <p className="text-sm text-slate-300">
+          Change the private admin URL slug. Share the new path only with trusted team members. You
+          will be logged out and redirected to the new path after saving.
+        </p>
+      </Card>
+
+      <Card title="Admin path" className="max-w-xl">
+        {isLoading ? (
+          <p className="text-sm text-slate-300">Loading current settings…</p>
+        ) : (
+          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+            <Input
+              label="Admin URL slug"
+              placeholder="e.g. executive-portal"
+              {...register('adminPath', {
+                required: 'Admin path is required',
+                pattern: {
+                  value: /^[a-z0-9-]+$/,
+                  message: 'Use only lowercase letters, numbers, and hyphens'
+                },
+                minLength: {
+                  value: 3,
+                  message: 'Must be at least 3 characters'
+                },
+                maxLength: {
+                  value: 30,
+                  message: 'Must be at most 30 characters'
+                }
+              })}
+              error={errors.adminPath?.message}
+            />
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
+              <p>
+                Current admin URL:{' '}
+                <span className="font-semibold text-white">
+                  {window.location.origin}/{adminSlug ?? data?.adminPath ?? 'admin'}
+                </span>
+              </p>
+              <p className="mt-2">
+                After saving, you will be redirected to the new path and asked to sign in again.
+              </p>
+            </div>
+            <Button type="submit" size="lg" disabled={isPending}>
+              {isPending ? 'Saving…' : 'Save admin path'}
+            </Button>
+          </form>
+        )}
+      </Card>
+
+      <Card title="Featured Selections" className="max-w-xl">
+        <p className="mb-4 text-sm text-slate-300">
+          Control how many featured products appear in the "Featured Selections" section on the home page. Products marked as "Featured" in the Products page will be displayed here.
+        </p>
+        {featuredCountData.isLoading ? (
+          <p className="text-sm text-slate-300">Loading current settings…</p>
+        ) : (
+          <form className="space-y-4" onSubmit={handleSubmitFeatured(onSubmitFeatured)}>
+            <Input
+              type="number"
+              label="Number of featured items"
+              min={1}
+              max={20}
+              {...registerFeatured('featuredCount', {
+                required: 'Featured count is required',
+                valueAsNumber: true,
+                min: { value: 1, message: 'Must be at least 1' },
+                max: { value: 20, message: 'Must be at most 20' }
+              })}
+              error={featuredErrors.featuredCount?.message}
+            />
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
+              <p>
+                Currently showing{' '}
+                <span className="font-semibold text-white">
+                  {featuredCountData.data ?? 3} featured {featuredCountData.data === 1 ? 'item' : 'items'}
+                </span>{' '}
+                on the home page.
+              </p>
+              <p className="mt-2">
+                Mark products as "Featured" in the Products page to control which items appear here.
+              </p>
+            </div>
+            <Button type="submit" size="lg" disabled={isUpdatingFeatured}>
+              {isUpdatingFeatured ? 'Saving…' : 'Save featured count'}
+            </Button>
+          </form>
+        )}
+      </Card>
+
+      <Card title="Theme Settings" className="max-w-xl">
+        <p className="mb-4 text-sm text-slate-300">
+          Change the theme of the storefront. The selected theme will be applied to all visitors.
+        </p>
+        <div className="space-y-4">
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-slate-300">Select Theme</label>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+              {(['dark', 'light', 'elegant', 'fashion', 'blue', 'purple', 'green'] as Theme[]).map((themeOption) => (
+                <button
+                  key={themeOption}
+                  type="button"
+                      onClick={() => {
+                        setTheme(themeOption);
+                        toast.success(`Storefront theme changed to ${themeOption.charAt(0).toUpperCase() + themeOption.slice(1)}`);
+                        // Note: Theme only applies to storefront pages, not admin pages
+                      }}
+                  className={`relative rounded-xl border-2 p-4 transition-all ${
+                    theme === themeOption
+                      ? 'border-brand-400 bg-brand-400/10 shadow-lg shadow-brand-400/20'
+                      : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
+                  }`}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <div
+                      className={`h-12 w-12 rounded-lg ${
+                        themeOption === 'dark'
+                          ? 'bg-gradient-to-br from-slate-900 to-slate-950'
+                          : themeOption === 'light'
+                          ? 'bg-gradient-to-br from-white to-gray-100 border border-gray-200'
+                          : themeOption === 'elegant'
+                          ? 'bg-gradient-to-br from-[#faf8f3] to-[#f5f1e8] border border-[#ddd4c4]'
+                          : themeOption === 'fashion'
+                          ? 'bg-gradient-to-br from-[#faf5ff] to-[#f3e8ff] border border-[#d8b4fe]'
+                          : themeOption === 'blue'
+                          ? 'bg-gradient-to-br from-blue-900 to-blue-950'
+                          : themeOption === 'purple'
+                          ? 'bg-gradient-to-br from-purple-900 to-purple-950'
+                          : 'bg-gradient-to-br from-green-900 to-green-950'
+                      }`}
+                    />
+                    <span className="text-xs font-medium text-white capitalize">{themeOption === 'fashion' ? 'Fashion' : themeOption === 'elegant' ? 'Elegant' : themeOption}</span>
+                    {theme === themeOption && (
+                      <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-brand-400 flex items-center justify-center">
+                        <svg className="h-3 w-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
+            <p>
+              Current theme:{' '}
+              <span className="font-semibold text-white capitalize">{theme}</span>
+            </p>
+            <p className="mt-2">
+              The theme is applied immediately and saved for all visitors.
+            </p>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
+export default AdminSettingsPage;
+

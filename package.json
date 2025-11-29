@@ -1,0 +1,13 @@
+{
+  "name": "ecommerce-hezak",
+  "version": "1.0.0",
+  "scripts": {
+    "firebase:login": "firebase login",
+    "firebase:init": "cd frontend && firebase init hosting",
+    "firebase:deploy": "cd frontend && npm run build && firebase deploy --only hosting",
+    "firebase:serve": "cd frontend && firebase serve"
+  },
+  "devDependencies": {
+    "firebase-tools": "^14.26.0"
+  }
+}

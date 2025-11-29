@@ -1,0 +1,47 @@
+import * as admin from 'firebase-admin';
+
+// Initialize Firebase Admin SDK
+// You'll need to download your service account key from Firebase Console
+// and either:
+// 1. Set GOOGLE_APPLICATION_CREDENTIALS environment variable
+// 2. Or provide the service account JSON directly
+
+let firebaseAdmin: admin.app.App | null = null;
+
+try {
+  // Try to initialize with service account from environment
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    firebaseAdmin = admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount as admin.ServiceAccount)
+    });
+  } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    // Use service account file path
+    firebaseAdmin = admin.initializeApp({
+      credential: admin.credential.applicationDefault()
+    });
+  } else {
+    // For development, you can use a service account file
+    // In production, use environment variables
+    console.warn('Firebase Admin not initialized. Google login will not work. Set FIREBASE_SERVICE_ACCOUNT or GOOGLE_APPLICATION_CREDENTIALS environment variable.');
+  }
+} catch (error) {
+  console.error('Firebase Admin initialization error:', error);
+}
+
+export const verifyIdToken = async (idToken: string) => {
+  if (!firebaseAdmin) {
+    throw new Error('Firebase Admin not initialized. Please configure FIREBASE_SERVICE_ACCOUNT or GOOGLE_APPLICATION_CREDENTIALS.');
+  }
+  
+  try {
+    const decodedToken = await admin.auth(firebaseAdmin).verifyIdToken(idToken);
+    return decodedToken;
+  } catch (error) {
+    console.error('Error verifying ID token:', error);
+    throw new Error('Invalid ID token');
+  }
+};
+
+export default firebaseAdmin;
+
