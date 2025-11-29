@@ -1,5 +1,7 @@
 // Vercel serverless function handler
-const { app } = require('../dist/app');
+// This file is used when deploying to Vercel
+const { app } = require('../dist/app.js');
 
+// Export the Express app for Vercel serverless functions
 module.exports = app;
 
