@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: hezak-backend
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: hezak-db
+          property: connectionString
+
+databases:
+  - name: hezak-db
+    plan: free
+
