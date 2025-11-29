@@ -82,14 +82,28 @@ apiClient.interceptors.response.use(
     }
     
     // Log error for debugging
-    console.error('API Error:', {
+    const errorDetails = {
       url: error.config?.url,
       method: error.config?.method,
       status: error.response?.status,
+      statusText: error.response?.statusText,
       data: error.response?.data,
       message: getErrorMessage(error),
-      code: error.code
-    });
+      code: error.code,
+      baseURL: error.config?.baseURL,
+      fullURL: error.config?.baseURL ? `${error.config.baseURL}${error.config.url}` : error.config?.url
+    };
+    
+    console.error('API Error:', errorDetails);
+    console.error('Error details:', error);
+    
+    // Show helpful message for common issues
+    if (!error.response) {
+      console.error('⚠️ Backend server is not reachable. Check:');
+      console.error('1. Is backend deployed?');
+      console.error('2. Is VITE_API_URL set correctly?');
+      console.error('3. Current API URL:', error.config?.baseURL || '/api');
+    }
     
     return Promise.reject(error);
   }
