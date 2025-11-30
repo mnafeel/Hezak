@@ -164,6 +164,10 @@ export const loginWithGoogle = async (idToken: string) => {
   }
 
   // Generate JWT token
+  if (!user) {
+    throw new Error('User not found');
+  }
+
   const token = jwt.sign(
     {
       userId: user.id,
