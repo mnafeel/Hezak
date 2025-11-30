@@ -3,22 +3,21 @@
   "buildCommand": "npm install && npm run prisma:generate && npm run build",
   "outputDirectory": "dist",
   "installCommand": "npm install",
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "/api/index.js"
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
     },
     {
-      "src": "/health",
-      "dest": "/api/index.js"
+      "source": "/health",
+      "destination": "/api/index.js"
     },
     {
-      "src": "/(.*)",
-      "dest": "/api/index.js"
+      "source": "/(.*)",
+      "destination": "/api/index.js"
     }
   ],
   "env": {
     "NODE_ENV": "production"
   }
 }
-
