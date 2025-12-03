@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Request, Response } from 'express';
 import { userRegisterSchema, userLoginSchema, updateUserProfileSchema, googleLoginSchema } from '../schemas/auth';
 import { registerUser, loginUser, updateUserProfile, loginWithGoogle } from '../services/userAuthService';

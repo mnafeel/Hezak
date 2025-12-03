@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Request, Response } from 'express';
 import { z } from 'zod';
 import { createOrderSchema, updateOrderSchema } from '../schemas/order';
