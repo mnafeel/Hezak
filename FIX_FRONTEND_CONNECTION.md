@@ -11,6 +11,7 @@ This means the frontend can't reach the backend.
 ## ✅ Step 1: Verify Backend is Running
 
 **Test backend directly**:
+
 ```
 https://hezak-backend.onrender.com/health
 ```
@@ -30,13 +31,15 @@ The frontend needs to know where the backend is.
 ### Check Current Configuration:
 
 **In browser console** (F12):
+
 ```javascript
-console.log(import.meta.env.VITE_API_URL)
+console.log(import.meta.env.VITE_API_URL);
 ```
 
 **Should show**: `https://hezak-backend.onrender.com/api`
 
 **If it shows**:
+
 - `undefined` → Environment variable not set
 - `/api` → Using local proxy (won't work in production)
 - Wrong URL → Needs to be updated
@@ -103,10 +106,12 @@ console.log(import.meta.env.VITE_API_URL)
 **Problem**: Render free tier sleeps after 15 min inactivity
 
 **Symptoms**:
+
 - First request takes 30+ seconds
 - "Network Error" or timeout
 
 **Fix**:
+
 - Wait 30 seconds for first request
 - Or upgrade to paid plan (always-on)
 
@@ -117,6 +122,7 @@ console.log(import.meta.env.VITE_API_URL)
 **Problem**: Browser blocks request due to CORS
 
 **Check**: Browser console for:
+
 ```
 Access to fetch at '...' from origin '...' has been blocked by CORS policy
 ```
@@ -128,14 +134,17 @@ Access to fetch at '...' from origin '...' has been blocked by CORS policy
 ### Issue 4: Wrong URL Format
 
 **Correct**:
+
 ```
 https://hezak-backend.onrender.com/api
 ```
 
 **Wrong**:
+
 ```
 https://hezak-backend.onrender.com/api/
 ```
+
 (No trailing slash)
 
 ---
@@ -143,10 +152,12 @@ https://hezak-backend.onrender.com/api/
 ## ✅ Quick Test
 
 **Test backend from browser**:
+
 1. **Open**: `https://hezak-backend.onrender.com/health`
 2. **Should see**: `{"status":"ok",...}`
 
 **Test API from browser**:
+
 1. **Open**: `https://hezak-backend.onrender.com/api/products`
 2. **Should see**: `[]` (empty array)
 
@@ -170,6 +181,7 @@ https://hezak-backend.onrender.com/api/
 **Most likely issue**: `VITE_API_URL` is not set in frontend.
 
 **Fix**:
+
 1. **Vercel** → Frontend → **Settings** → **Environment Variables**
 2. **Add**: `VITE_API_URL` = `https://hezak-backend.onrender.com/api`
 3. **Redeploy** frontend
@@ -179,4 +191,3 @@ https://hezak-backend.onrender.com/api/
 ---
 
 **Set the environment variable and redeploy your frontend!** 🚀
-
