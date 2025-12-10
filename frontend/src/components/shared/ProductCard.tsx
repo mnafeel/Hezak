@@ -36,10 +36,10 @@ const ProductCard = ({ product }: ProductCardProps) => {
   };
 
   const primaryImage = useMemo(() => {
-    if (product.gallery.length > 0) {
+    if (product.gallery && Array.isArray(product.gallery) && product.gallery.length > 0) {
       return product.gallery[0]!;
     }
-    return product.imageUrl;
+    return product.imageUrl || '';
   }, [product.imageUrl, product.gallery]);
 
   // Check if product has any available inventory (variant-based or general)

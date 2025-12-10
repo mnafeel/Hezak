@@ -125,7 +125,7 @@ const ShopPage = () => {
                 ? 'Loading...'
                 : `${products.length} ${products.length === 1 ? 'product' : 'products'} ${
                     view || selectedCategory ? 'found' : 'available'
-                  }`}
+                  } (${allProducts.length} total)`}
             </p>
           </div>
           {(view || selectedCategory) && (
@@ -174,17 +174,51 @@ const ShopPage = () => {
           </motion.div>
         ) : products.length > 0 ? (
           <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {products.map((product, index) => (
-              <motion.div
-                key={product.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.5) }}
-              >
-                <ProductCard product={product} />
-              </motion.div>
-            ))}
+            {products.map((product, index) => {
+              // Validate product data before rendering
+              if (!product || !product.id || !product.name) {
+                console.warn('Invalid product data:', product);
+                return null;
+              }
+              return (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.5) }}
+                >
+                  <ProductCard product={product} />
+                </motion.div>
+              );
+            })}
           </div>
+        ) : allProducts.length > 0 ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className={`p-16 text-center ${getGlassPanelClass()} ${getShadowClass('lg')}`}
+          >
+            <div className="mx-auto max-w-sm space-y-4">
+              <div className={`mx-auto h-20 w-20 rounded-full ${theme === 'light' ? 'bg-gray-200' : 'bg-white/5'} flex items-center justify-center`}>
+                <span className="text-4xl">🔍</span>
+              </div>
+              <div>
+                <h3 className={`text-xl font-semibold ${getTextColor('primary')}`}>Products filtered out</h3>
+                <p className={`mt-2 ${getTextColor('secondary')}`}>
+                  {allProducts.length} products available, but none match the current filter.
+                </p>
+              </div>
+              {(view || selectedCategory) && (
+                <button
+                  type="button"
+                  onClick={handleClearView}
+                  className={`rounded-full bg-brand-500 px-6 py-3 text-sm font-semibold ${getTextColor('primary')} transition hover:bg-brand-600`}
+                >
+                  View All {allProducts.length} Products
+                </button>
+              )}
+            </div>
+          </motion.div>
         ) : (
           <motion.div
             initial={{ opacity: 0 }}
