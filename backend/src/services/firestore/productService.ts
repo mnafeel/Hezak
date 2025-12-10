@@ -1,6 +1,5 @@
 import { getCollection, COLLECTIONS, snapshotToArray, docToObject, toDate, toTimestamp } from '../../utils/firestore';
 import { ProductInput, UpdateProductInput } from '../../schemas/product';
-import type { Product, Category } from '../../types';
 
 // Firestore Product type (with string IDs)
 export interface FirestoreProduct {
