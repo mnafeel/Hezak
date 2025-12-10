@@ -250,7 +250,28 @@ const AdminCategoriesPage = () => {
 
   const startAssigning = (category: Category) => {
     setAssignmentCategoryId(category.id);
-    setAssignedProductIds(category.products?.map((product) => product.id) ?? []);
+    // Get product IDs from category.products if available
+    const productIdsFromCategory = category.products?.map((product) => product.id) ?? [];
+    
+    // Also check products array to see which products have this category in their categories array
+    const productIdsFromProducts = products
+      .filter((product) => {
+        // Check if product has this category in its categories array
+        if (product.categories && Array.isArray(product.categories)) {
+          return product.categories.some((pc) => 
+            pc.categoryId === category.id || 
+            pc.category?.id === category.id ||
+            (typeof pc.id === 'number' && pc.id === category.id)
+          );
+        }
+        // Fallback to single category
+        return product.category?.id === category.id;
+      })
+      .map((product) => product.id);
+    
+    // Combine both sources and remove duplicates
+    const allProductIds = [...new Set([...productIdsFromCategory, ...productIdsFromProducts])];
+    setAssignedProductIds(allProductIds);
   };
 
   const toggleProductSelection = (productId: number) => {
