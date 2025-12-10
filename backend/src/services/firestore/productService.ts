@@ -175,19 +175,36 @@ export const createProduct = async (input: ProductInput) => {
     const productId = Date.now().toString();
     const now = new Date().toISOString();
 
+    // Filter out undefined values from colors (Firestore doesn't accept undefined)
+    const sanitizedColors = (input.colors ?? []).map((color) => {
+      const sanitized: any = { name: color.name };
+      if (color.hex !== undefined && color.hex !== null && color.hex !== '') {
+        sanitized.hex = color.hex;
+      }
+      if (color.imageUrl !== undefined && color.imageUrl !== null && color.imageUrl !== '') {
+        sanitized.imageUrl = color.imageUrl;
+      }
+      return sanitized;
+    });
+
     const productData: Omit<FirestoreProduct, 'id'> = {
       name: input.name,
       description: input.description,
       priceCents: Math.round(input.price * 100),
       imageUrl: input.imageUrl,
-      gallery: input.gallery ?? [],
-      colors: input.colors ?? [],
-      sizes: input.sizes ?? [],
+      gallery: (input.gallery ?? []).filter((url): url is string => url !== undefined && url !== null && url !== ''),
+      colors: sanitizedColors,
+      sizes: (input.sizes ?? []).filter((size): size is { name: string } => size !== undefined && size !== null && size.name !== undefined),
       itemType: input.itemType ?? '',
       inventory: input.inventory,
-      inventoryVariants: input.inventoryVariants ?? [],
+      inventoryVariants: (input.inventoryVariants ?? []).filter((variant): variant is any => 
+        variant !== undefined && 
+        variant !== null && 
+        variant.colorName !== undefined && 
+        variant.sizeName !== undefined
+      ),
       isFeatured: input.isFeatured ?? false,
-      categoryIds: input.categoryIds?.map((id) => String(id)) || [],
+      categoryIds: input.categoryIds?.map((id) => String(id)).filter((id): id is string => id !== undefined && id !== null) || [],
       createdAt: now,
       updatedAt: now
     };
