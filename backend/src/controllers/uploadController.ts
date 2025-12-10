@@ -1,10 +1,18 @@
 import path from 'path';
 import fs from 'fs';
 import { Request, Response } from 'express';
-import type multer from 'multer';
 import { storage } from '../utils/firebaseAdmin';
 
 const UPLOADS_DIR = path.resolve(process.cwd(), 'uploads');
+
+// Type for multer file (works with both memory and disk storage)
+interface MulterFile {
+  buffer?: Buffer;
+  filename?: string;
+  originalname: string;
+  mimetype: string;
+  size: number;
+}
 
 export const ensureUploadsDir = () => {
   if (!fs.existsSync(UPLOADS_DIR)) {
@@ -13,7 +21,10 @@ export const ensureUploadsDir = () => {
 };
 
 // Upload to Firebase Storage
-const uploadToFirebaseStorage = async (file: multer.File): Promise<string> => {
+const uploadToFirebaseStorage = async (file: MulterFile): Promise<string> => {
+  if (!file.buffer) {
+    throw new Error('File buffer is required for Firebase Storage upload');
+  }
   if (!storage) {
     throw new Error('Firebase Storage not initialized');
   }
