@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import { Request, Response } from 'express';
-import type { File } from 'multer';
+import type multer from 'multer';
 import { storage } from '../utils/firebaseAdmin';
 
 const UPLOADS_DIR = path.resolve(process.cwd(), 'uploads');
@@ -13,7 +13,7 @@ export const ensureUploadsDir = () => {
 };
 
 // Upload to Firebase Storage
-const uploadToFirebaseStorage = async (file: File): Promise<string> => {
+const uploadToFirebaseStorage = async (file: multer.File): Promise<string> => {
   if (!storage) {
     throw new Error('Firebase Storage not initialized');
   }
