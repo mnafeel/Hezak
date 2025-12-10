@@ -14,20 +14,37 @@ export const apiClient = axios.create({
 
 apiClient.interceptors.request.use((config) => {
   const url = config.url || '';
+  const method = config.method?.toLowerCase() || 'get';
   const adminToken = useAdminAuthStore.getState().token;
   const userToken = useUserAuthStore.getState().token;
   
   // Use the appropriate token based on the endpoint
   let token: string | null = null;
   
+  // Admin endpoints - always use admin token
   if (url.startsWith('/admin/')) {
-    // Admin endpoints - use admin token
     token = adminToken;
-  } else if (url.startsWith('/orders/me') || url.startsWith('/auth/')) {
-    // User endpoints - use user token
+  } 
+  // Product/Category/Banner mutations require admin auth
+  else if (
+    (url.startsWith('/products') && (method === 'post' || method === 'put' || method === 'delete')) ||
+    (url.startsWith('/categories') && (method === 'post' || method === 'put' || method === 'delete')) ||
+    (url.startsWith('/banners') && (method === 'post' || method === 'put' || method === 'delete')) ||
+    (url.startsWith('/upload/') && method === 'post') ||
+    (url.startsWith('/settings/') && (method === 'put' || method === 'post'))
+  ) {
+    token = adminToken;
+  }
+  // User endpoints - use user token
+  else if (url.startsWith('/orders/me') || url.startsWith('/auth/')) {
     token = userToken;
-  } else {
-    // For other endpoints, prefer user token, fallback to admin token
+  } 
+  // For GET requests on public endpoints, no token needed
+  else if (method === 'get' && (url.startsWith('/products') || url.startsWith('/categories') || url.startsWith('/banners'))) {
+    token = null; // Public endpoints
+  }
+  // For other endpoints, prefer user token, fallback to admin token
+  else {
     token = userToken || adminToken;
   }
   
