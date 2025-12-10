@@ -115,10 +115,19 @@ export const listProducts = async (categorySlug?: string) => {
       });
       snapshot = { docs: allDocs };
     } else {
-      snapshot = await query.get();
+      // Get all products without category filter
+      snapshot = await productsRef.get();
     }
 
     const products = snapshotToArray<FirestoreProduct>(snapshot);
+    
+    // Sort by createdAt desc in memory (since we can't use orderBy without index)
+    products.sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return dateB - dateA; // Descending
+    });
+    
     return Promise.all(products.map(toProduct));
   } catch (error) {
     console.error('Error in listProducts:', error);
