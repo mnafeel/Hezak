@@ -99,6 +99,14 @@ const AdminCategoriesPage = () => {
       // Invalidate both admin and storefront category queries so navbar updates immediately
       queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] });
       queryClient.invalidateQueries({ queryKey: ['categories'] });
+      toast.success('Category deleted successfully');
+    },
+    onError: (error: any) => {
+      if (error?.response?.status === 401) {
+        toast.error('Your session has expired. Please log in again.');
+      } else {
+        showError(error, 'Failed to delete category');
+      }
     }
   });
 

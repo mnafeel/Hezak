@@ -62,9 +62,23 @@ apiClient.interceptors.response.use(
       const url = error.config?.url || '';
       
       // Only clear the relevant auth store based on the endpoint
-      if (url.startsWith('/admin/')) {
-        // Admin endpoint - clear admin auth only
-        useAdminAuthStore.getState().clearAuth();
+      if (url.startsWith('/admin/') || url.startsWith('/categories/') || url.startsWith('/products/') || url.startsWith('/banners/')) {
+        // Admin endpoint - clear admin auth and redirect to login
+        const adminStore = useAdminAuthStore.getState();
+        adminStore.clearAuth();
+        
+        // Redirect to admin login if we're in admin pages
+        if (typeof window !== 'undefined' && window.location.pathname.includes('/admin')) {
+          // Get admin path from URL or use default
+          const pathParts = window.location.pathname.split('/');
+          const adminIndex = pathParts.findIndex(part => part === 'admin');
+          const adminSlug = adminIndex > 0 ? pathParts[adminIndex - 1] : 'admin';
+          
+          toast.error('Your session has expired. Please log in again.');
+          setTimeout(() => {
+            window.location.href = `/${adminSlug}/login`;
+          }, 1000);
+        }
       } else if (url.startsWith('/orders/me') || url.startsWith('/auth/')) {
         // User endpoint - clear user auth only
         useUserAuthStore.getState().clearAuth();
