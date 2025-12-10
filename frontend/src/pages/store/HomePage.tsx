@@ -24,11 +24,32 @@ const HomePage = () => {
     const topSellingCategoryIds = categories
       .filter((cat) => cat.isTopSelling)
       .map((cat) => cat.id);
-    return allProducts
-      .filter(
-        (product) => product.category && topSellingCategoryIds.includes(product.category.id)
-      )
-      .slice(0, 8);
+    
+    // If no top selling categories, show all products
+    if (topSellingCategoryIds.length === 0) {
+      return allProducts.slice(0, 8);
+    }
+    
+    const productsFromCategories = allProducts.filter(
+      (product) => {
+        // Check if product has category and it's in top selling categories
+        if (product.category && topSellingCategoryIds.includes(product.category.id)) {
+          return true;
+        }
+        // Also check categories array (for products with multiple categories)
+        if (Array.isArray(product.categories) && product.categories.length > 0) {
+          return product.categories.some((pc) => 
+            topSellingCategoryIds.includes(pc.categoryId || pc.category?.id)
+          );
+        }
+        return false;
+      }
+    );
+    
+    // If no products from top selling categories, show all products as fallback
+    return productsFromCategories.length > 0 
+      ? productsFromCategories.slice(0, 8)
+      : allProducts.slice(0, 8);
   }, [allProducts, categories]);
 
   const featuredProducts = useMemo<Product[]>(() => {
@@ -37,11 +58,32 @@ const HomePage = () => {
     const featuredCategoryIds = categories
       .filter((cat) => cat.isFeatured)
       .map((cat) => cat.id);
-    return allProducts
-      .filter(
-        (product) => product.category && featuredCategoryIds.includes(product.category.id)
-      )
-      .slice(0, featuredCount ?? 8);
+    
+    // If no featured categories, show all products
+    if (featuredCategoryIds.length === 0) {
+      return allProducts.slice(0, featuredCount ?? 8);
+    }
+    
+    const productsFromCategories = allProducts.filter(
+      (product) => {
+        // Check if product has category and it's in featured categories
+        if (product.category && featuredCategoryIds.includes(product.category.id)) {
+          return true;
+        }
+        // Also check categories array (for products with multiple categories)
+        if (Array.isArray(product.categories) && product.categories.length > 0) {
+          return product.categories.some((pc) => 
+            featuredCategoryIds.includes(pc.categoryId || pc.category?.id)
+          );
+        }
+        return false;
+      }
+    );
+    
+    // If no products from featured categories, show all products as fallback
+    return productsFromCategories.length > 0 
+      ? productsFromCategories.slice(0, featuredCount ?? 8)
+      : allProducts.slice(0, featuredCount ?? 8);
   }, [allProducts, categories, featuredCount]);
 
   const handleExplore = () => {
