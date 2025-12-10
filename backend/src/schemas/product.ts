@@ -127,9 +127,23 @@ export const productSchema = z.preprocess(
       const gallery = Array.isArray(obj.gallery)
         ? obj.gallery.filter((url: unknown) => typeof url === 'string' && url.trim().length > 0)
         : [];
+      
+      // Convert categoryIds to numbers if they're strings (from Firestore)
+      let categoryIds = obj.categoryIds;
+      if (Array.isArray(categoryIds)) {
+        categoryIds = categoryIds.map((id: unknown) => {
+          if (typeof id === 'string') {
+            const num = Number(id);
+            return isNaN(num) ? id : num;
+          }
+          return id;
+        });
+      }
+      
       return {
         ...obj,
-        gallery
+        gallery,
+        categoryIds
       };
     }
     return data;
