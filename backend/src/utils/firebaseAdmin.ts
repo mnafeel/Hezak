@@ -36,8 +36,18 @@ try {
 // Export Firestore database instance
 export const db = firebaseAdmin ? getFirestore(firebaseAdmin) : null;
 
-// Export Realtime Database instance (if needed)
-export const realtimeDb = firebaseAdmin ? getDatabase(firebaseAdmin) : null;
+// Export Realtime Database instance (if needed and configured)
+// Only initialize if database URL is provided (we're using Firestore, so this is optional)
+let realtimeDbInstance: ReturnType<typeof getDatabase> | null = null;
+try {
+  if (firebaseAdmin && process.env.FIREBASE_DATABASE_URL) {
+    realtimeDbInstance = getDatabase(firebaseAdmin);
+  }
+} catch (error) {
+  // Realtime Database not configured - that's fine, we're using Firestore
+  console.log('ℹ️ Realtime Database not configured (using Firestore)');
+}
+export const realtimeDb = realtimeDbInstance;
 
 export const verifyIdToken = async (idToken: string) => {
   if (!firebaseAdmin) {
