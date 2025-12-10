@@ -115,7 +115,7 @@ const baseProductSchema = z.object({
       quantity: z.number().int().nonnegative()
     })
   ).optional().default([]),
-  categoryIds: z.array(z.number().int().positive()).optional().default([]),
+  categoryIds: z.array(z.coerce.number().int().positive()).optional().default([]),
   isFeatured: z.boolean().optional().default(false)
 });
 
