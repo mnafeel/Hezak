@@ -145,6 +145,33 @@ const ShopPage = () => {
             <div className="mx-auto h-8 w-8 sm:h-12 sm:w-12 animate-spin rounded-full border-4 border-brand-400/30 border-t-brand-400" />
             <p className={`mt-4 text-sm sm:text-base ${getTextColor('secondary')}`}>Loading products...</p>
           </div>
+        ) : allProducts.length > 0 && products.length === 0 && (view || selectedCategory) ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className={`p-16 text-center ${getGlassPanelClass()} ${getShadowClass('lg')}`}
+          >
+            <div className="mx-auto max-w-sm space-y-4">
+              <div className={`mx-auto h-20 w-20 rounded-full ${theme === 'light' ? 'bg-gray-200' : 'bg-white/5'} flex items-center justify-center`}>
+                <span className="text-4xl">🔍</span>
+              </div>
+              <div>
+                <h3 className={`text-xl font-semibold ${getTextColor('primary')}`}>No products found in this filter</h3>
+                <p className={`mt-2 ${getTextColor('secondary')}`}>
+                  {selectedCategory
+                    ? "We couldn't find any products in this category. Try viewing all products."
+                    : "We couldn't find any products matching this view. Try viewing all products."}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleClearView}
+                className={`rounded-full bg-brand-500 px-6 py-3 text-sm font-semibold ${getTextColor('primary')} transition hover:bg-brand-600`}
+              >
+                View All Products ({allProducts.length} available)
+              </button>
+            </div>
+          </motion.div>
         ) : products.length > 0 ? (
           <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {products.map((product, index) => (
