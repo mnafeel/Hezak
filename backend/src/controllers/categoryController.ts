@@ -105,10 +105,12 @@ export const updateCategoryProductsHandler = async (req: Request, res: Response)
   try {
     const { id } = categoryIdParamSchema.parse(req.params);
     const body = categoryProductsSchema.parse(req.body);
-    const category = await setCategoryProducts(id, body.productIds);
+    const productIds = body.productIds || [];
+    const category = await setCategoryProducts(id, productIds);
     res.json(serializeCategory(category));
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error('Validation error:', error.issues);
       return res
         .status(400)
         .json({ message: 'Invalid category products payload', issues: error.issues });
