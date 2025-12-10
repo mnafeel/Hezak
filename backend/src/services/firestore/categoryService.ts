@@ -1,4 +1,5 @@
-import { getCollection, COLLECTIONS, snapshotToArray, docToObject, toDate, db } from '../../utils/firestore';
+import { getCollection, COLLECTIONS, snapshotToArray, docToObject, toDate } from '../../utils/firestore';
+import { db } from '../../utils/firebaseAdmin';
 import { CategoryInput, UpdateCategoryInput } from '../../schemas/category';
 
 // Firestore Category type
