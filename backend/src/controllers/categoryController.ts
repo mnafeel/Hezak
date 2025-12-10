@@ -1,14 +1,31 @@
 // @ts-nocheck
 import { Request, Response } from 'express';
 import { z } from 'zod';
+import { USE_FIRESTORE } from '../config/database';
 import {
-  createCategory,
-  deleteCategory,
-  getCategoryById,
-  listCategories,
-  setCategoryProducts,
-  updateCategory
+  createCategory as createCategoryPrisma,
+  deleteCategory as deleteCategoryPrisma,
+  getCategoryById as getCategoryByIdPrisma,
+  listCategories as listCategoriesPrisma,
+  setCategoryProducts as setCategoryProductsPrisma,
+  updateCategory as updateCategoryPrisma
 } from '../services/categoryService';
+import {
+  createCategory as createCategoryFirestore,
+  deleteCategory as deleteCategoryFirestore,
+  getCategoryById as getCategoryByIdFirestore,
+  listCategories as listCategoriesFirestore,
+  setCategoryProducts as setCategoryProductsFirestore,
+  updateCategory as updateCategoryFirestore
+} from '../services/firestore/categoryService';
+
+// Use Firestore or Prisma based on config
+const listCategories = USE_FIRESTORE ? listCategoriesFirestore : listCategoriesPrisma;
+const getCategoryById = USE_FIRESTORE ? getCategoryByIdFirestore : getCategoryByIdPrisma;
+const createCategory = USE_FIRESTORE ? createCategoryFirestore : createCategoryPrisma;
+const updateCategory = USE_FIRESTORE ? updateCategoryFirestore : updateCategoryPrisma;
+const deleteCategory = USE_FIRESTORE ? deleteCategoryFirestore : deleteCategoryPrisma;
+const setCategoryProducts = USE_FIRESTORE ? setCategoryProductsFirestore : setCategoryProductsPrisma;
 import {
   categoryProductsSchema,
   categorySchema,
