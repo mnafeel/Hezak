@@ -12,7 +12,7 @@ export const ensureUploadsDir = () => {
 };
 
 // Upload to Firebase Storage
-const uploadToFirebaseStorage = async (file: Express.Multer.File): Promise<string> => {
+const uploadToFirebaseStorage = async (file: { buffer: Buffer; originalname: string; mimetype: string }): Promise<string> => {
   if (!storage) {
     throw new Error('Firebase Storage not initialized');
   }
