@@ -71,7 +71,6 @@ const toProduct = async (firestoreProduct: FirestoreProduct): Promise<any> => {
 export const listProducts = async (categorySlug?: string) => {
   try {
     const productsRef = getCollection(COLLECTIONS.PRODUCTS);
-    let query: FirebaseFirestore.Query = productsRef.orderBy('createdAt', 'desc');
 
     let productIds: string[] | undefined = undefined;
 
