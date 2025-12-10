@@ -256,11 +256,11 @@ export const setCategoryProducts = async (
 
     // Find products to remove (in category but not in new list)
     const productsToRemove = currentProductIds.filter(
-      (id) => !productIds.includes(id)
+      (id) => !validProductIds.includes(id)
     );
 
     // Find products to add (in new list but not in category)
-    const productsToAdd = productIds.filter(
+    const productsToAdd = validProductIds.filter(
       (id) => !currentProductIds.includes(id)
     );
 
@@ -325,10 +325,15 @@ export const setCategoryProducts = async (
       where: { categoryId }
     });
 
-    return {
-      ...category,
-      _count: { products: productCount }
-    } as CategoryListPayload;
-  });
+      return {
+        ...category,
+        _count: { products: productCount }
+      } as CategoryListPayload;
+    });
+  } catch (error) {
+    console.error('Error in setCategoryProducts:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
+    throw error;
+  }
 };
 
