@@ -36,19 +36,49 @@ const ShopPage = () => {
       // Get products from top selling categories
       const topSellingCategoryIds = categories
         .filter((cat) => cat.isTopSelling)
-        .map((cat) => cat.id);
-      return allProducts.filter(
-        (product) => product.category && topSellingCategoryIds.includes(product.category.id)
-      );
+        .map((cat) => String(cat.id));
+      
+      if (topSellingCategoryIds.length === 0) {
+        return allProducts; // Show all if no top selling categories
+      }
+      
+      return allProducts.filter((product) => {
+        // Check if product has category and it's in top selling categories
+        if (product.category && topSellingCategoryIds.includes(String(product.category.id))) {
+          return true;
+        }
+        // Also check categories array (for products with multiple categories)
+        if (Array.isArray(product.categories) && product.categories.length > 0) {
+          return product.categories.some((pc) => 
+            topSellingCategoryIds.includes(String(pc.categoryId || pc.category?.id))
+          );
+        }
+        return false;
+      });
     }
     if (view === 'featured') {
       // Get products from featured categories
       const featuredCategoryIds = categories
         .filter((cat) => cat.isFeatured)
-        .map((cat) => cat.id);
-      return allProducts.filter(
-        (product) => product.category && featuredCategoryIds.includes(product.category.id)
-      );
+        .map((cat) => String(cat.id));
+      
+      if (featuredCategoryIds.length === 0) {
+        return allProducts; // Show all if no featured categories
+      }
+      
+      return allProducts.filter((product) => {
+        // Check if product has category and it's in featured categories
+        if (product.category && featuredCategoryIds.includes(String(product.category.id))) {
+          return true;
+        }
+        // Also check categories array (for products with multiple categories)
+        if (Array.isArray(product.categories) && product.categories.length > 0) {
+          return product.categories.some((pc) => 
+            featuredCategoryIds.includes(String(pc.categoryId || pc.category?.id))
+          );
+        }
+        return false;
+      });
     }
     return allProducts;
   }, [allProducts, view, categories]);

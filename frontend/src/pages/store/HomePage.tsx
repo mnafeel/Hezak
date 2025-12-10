@@ -23,7 +23,7 @@ const HomePage = () => {
     if (!Array.isArray(categories) || !Array.isArray(allProducts)) return [];
     const topSellingCategoryIds = categories
       .filter((cat) => cat.isTopSelling)
-      .map((cat) => cat.id);
+      .map((cat) => String(cat.id));
     
     // If no top selling categories, show all products
     if (topSellingCategoryIds.length === 0) {
@@ -33,13 +33,13 @@ const HomePage = () => {
     const productsFromCategories = allProducts.filter(
       (product) => {
         // Check if product has category and it's in top selling categories
-        if (product.category && topSellingCategoryIds.includes(product.category.id)) {
+        if (product.category && topSellingCategoryIds.includes(String(product.category.id))) {
           return true;
         }
         // Also check categories array (for products with multiple categories)
         if (Array.isArray(product.categories) && product.categories.length > 0) {
           return product.categories.some((pc) => 
-            topSellingCategoryIds.includes(pc.categoryId || pc.category?.id)
+            topSellingCategoryIds.includes(String(pc.categoryId || pc.category?.id))
           );
         }
         return false;
@@ -57,7 +57,7 @@ const HomePage = () => {
     // Get products from featured categories
     const featuredCategoryIds = categories
       .filter((cat) => cat.isFeatured)
-      .map((cat) => cat.id);
+      .map((cat) => String(cat.id));
     
     // If no featured categories, show all products
     if (featuredCategoryIds.length === 0) {
@@ -67,13 +67,13 @@ const HomePage = () => {
     const productsFromCategories = allProducts.filter(
       (product) => {
         // Check if product has category and it's in featured categories
-        if (product.category && featuredCategoryIds.includes(product.category.id)) {
+        if (product.category && featuredCategoryIds.includes(String(product.category.id))) {
           return true;
         }
         // Also check categories array (for products with multiple categories)
         if (Array.isArray(product.categories) && product.categories.length > 0) {
           return product.categories.some((pc) => 
-            featuredCategoryIds.includes(pc.categoryId || pc.category?.id)
+            featuredCategoryIds.includes(String(pc.categoryId || pc.category?.id))
           );
         }
         return false;
