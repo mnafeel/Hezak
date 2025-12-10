@@ -37,7 +37,7 @@ export type OrderWithRelations = Prisma.OrderGetPayload<{
 export const serializeMoney = (value: number | null | undefined): number =>
   Number(((value ?? 0) / 100).toFixed(2));
 
-export const serializeProduct = (product: ProductWithCategories) => {
+export const serializeProduct = (product: ProductWithCategories | any) => {
   // Safely extract categories from the nested structure
   let categories: Array<{ id: number; name: string; slug: string }> = [];
   
@@ -46,10 +46,29 @@ export const serializeProduct = (product: ProductWithCategories) => {
       categories = product.categories
         .map((pc) => {
           try {
+            // Handle Prisma structure: { category: {...} }
             if (pc && typeof pc === 'object' && 'category' in pc && pc.category) {
-              const cat = pc.category as { id: number; name: string; slug: string };
+              const cat = pc.category as { id: number | string; name: string; slug: string };
               return {
-                id: cat.id,
+                id: typeof cat.id === 'string' ? parseInt(cat.id) || 0 : cat.id,
+                name: cat.name,
+                slug: cat.slug
+              };
+            }
+            // Handle Firestore structure: { id, name, slug, categoryId, category: {...} }
+            if (pc && typeof pc === 'object' && 'category' in pc && pc.category && typeof pc.category === 'object') {
+              const cat = pc.category as { id: number | string; name: string; slug: string };
+              return {
+                id: typeof cat.id === 'string' ? parseInt(cat.id) || 0 : cat.id,
+                name: cat.name,
+                slug: cat.slug
+              };
+            }
+            // Handle direct category object (Firestore fallback)
+            if (pc && typeof pc === 'object' && 'id' in pc && 'name' in pc && 'slug' in pc) {
+              const cat = pc as { id: number | string; name: string; slug: string };
+              return {
+                id: typeof cat.id === 'string' ? parseInt(cat.id) || 0 : cat.id,
                 name: cat.name,
                 slug: cat.slug
               };
@@ -60,7 +79,7 @@ export const serializeProduct = (product: ProductWithCategories) => {
             return null;
           }
         })
-        .filter((cat): cat is { id: number; name: string; slug: string } => cat !== null);
+        .filter((cat): cat is { id: number; name: string; slug: string } => cat !== null && cat.id > 0);
     }
   } catch (error) {
     console.error('Error extracting categories from product:', error, product.id);
@@ -68,7 +87,21 @@ export const serializeProduct = (product: ProductWithCategories) => {
   }
   
   // For backward compatibility, use the first category as the primary category
-  const primaryCategory = categories.length > 0 ? categories[0]! : null;
+  // Also handle if product.category is already an object (Firestore case)
+  let primaryCategory: { id: number; name: string; slug: string } | null = null;
+  
+  if (product.category && typeof product.category === 'object' && 'id' in product.category) {
+    // Product already has a category object (Firestore case)
+    const cat = product.category as { id: number | string; name: string; slug: string };
+    primaryCategory = {
+      id: typeof cat.id === 'string' ? parseInt(cat.id) || 0 : cat.id,
+      name: cat.name,
+      slug: cat.slug
+    };
+  } else if (categories.length > 0) {
+    // Use first category from categories array
+    primaryCategory = categories[0]!;
+  }
 
   return {
     id: product.id,
