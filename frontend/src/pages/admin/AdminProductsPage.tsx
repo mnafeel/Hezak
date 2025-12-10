@@ -237,7 +237,7 @@ const AdminProductsPage = () => {
     setIsFormOpen(true);
     // Get category IDs from categories array or fallback to single category
     const categoryIds = product.categories && product.categories.length > 0
-      ? product.categories.map((cat) => cat.id)
+      ? product.categories.map((cat) => cat.categoryId || cat.category?.id || cat.id).filter((id): id is number => typeof id === 'number')
       : product.category
       ? [product.category.id]
       : [];
@@ -316,7 +316,7 @@ const AdminProductsPage = () => {
                       <div className="flex items-center gap-3">
                         <h3 className="text-lg font-semibold text-white">{product.name}</h3>
                         {(product.categories && product.categories.length > 0
-                          ? product.categories
+                          ? product.categories.map((pc) => pc.category).filter((c): c is NonNullable<typeof c> => c !== null && c !== undefined)
                           : product.category
                           ? [product.category]
                           : []
@@ -330,7 +330,7 @@ const AdminProductsPage = () => {
                       <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-300">
                         <span>
                           {(product.categories && product.categories.length > 0
-                            ? product.categories.map((cat) => cat.name).join(', ')
+                            ? product.categories.map((cat) => cat.category?.name).filter((n): n is string => n !== undefined && n !== null).join(', ')
                             : product.category?.name ?? 'Uncategorised'
                           )}
                         </span>
