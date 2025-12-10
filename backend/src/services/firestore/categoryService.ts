@@ -60,12 +60,22 @@ const toCategory = async (firestoreCategory: FirestoreCategory, includeProducts 
 export const listCategories = async (options: { includeProducts?: boolean } = {}) => {
   try {
     const categoriesRef = getCollection(COLLECTIONS.CATEGORIES);
-    const snapshot = await categoriesRef
-      .orderBy('isTopSelling', 'desc')
-      .orderBy('name', 'asc')
-      .get();
+    // Firestore doesn't support multiple orderBy without composite index
+    // Fetch all and sort in memory instead
+    const snapshot = await categoriesRef.get();
 
     const categories = snapshotToArray<FirestoreCategory>(snapshot);
+    
+    // Sort in memory: top selling first, then by name
+    categories.sort((a, b) => {
+      // First sort by isTopSelling (true first)
+      if (a.isTopSelling !== b.isTopSelling) {
+        return a.isTopSelling ? -1 : 1;
+      }
+      // Then sort by name
+      return a.name.localeCompare(b.name);
+    });
+    
     return Promise.all(categories.map((cat) => toCategory(cat, options.includeProducts)));
   } catch (error) {
     console.error('Error in listCategories:', error);
