@@ -15,7 +15,7 @@ export const categorySchema = z.object({
 export const updateCategorySchema = categorySchema.partial();
 
 export const categoryProductsSchema = z.object({
-  productIds: z.array(z.number().int().positive()).default([])
+  productIds: z.array(z.coerce.number().int().positive()).default([])
 });
 
 export type CategoryInput = z.infer<typeof categorySchema>;

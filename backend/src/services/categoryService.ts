@@ -227,9 +227,13 @@ export const setCategoryProducts = async (
 ): Promise<CategoryListPayload> => {
   return prisma.$transaction(async (tx) => {
     // Verify category exists
-    await tx.category.findUniqueOrThrow({
+    const categoryExists = await tx.category.findUnique({
       where: { id: categoryId }
     });
+    
+    if (!categoryExists) {
+      throw new Error(`Category with id ${categoryId} not found`);
+    }
 
     // Get all products currently in this category through the join table
     let currentProductCategories;
