@@ -29,6 +29,12 @@ try {
   console.error('Firebase Admin initialization error:', error);
 }
 
+// Export Firestore database instance
+export const db = firebaseAdmin?.firestore();
+
+// Export Realtime Database instance (if needed)
+export const realtimeDb = firebaseAdmin?.database();
+
 export const verifyIdToken = async (idToken: string) => {
   if (!firebaseAdmin) {
     throw new Error('Firebase Admin not initialized. Please configure FIREBASE_SERVICE_ACCOUNT or GOOGLE_APPLICATION_CREDENTIALS.');
