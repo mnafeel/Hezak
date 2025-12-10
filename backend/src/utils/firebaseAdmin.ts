@@ -1,4 +1,6 @@
 import * as admin from 'firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
+import { getDatabase } from 'firebase-admin/database';
 
 // Initialize Firebase Admin SDK
 // You'll need to download your service account key from Firebase Console
@@ -15,25 +17,27 @@ try {
     firebaseAdmin = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount as admin.ServiceAccount)
     });
+    console.log('✅ Firebase Admin initialized successfully');
   } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
     // Use service account file path
     firebaseAdmin = admin.initializeApp({
       credential: admin.credential.applicationDefault()
     });
+    console.log('✅ Firebase Admin initialized successfully');
   } else {
     // For development, you can use a service account file
     // In production, use environment variables
-    console.warn('Firebase Admin not initialized. Google login will not work. Set FIREBASE_SERVICE_ACCOUNT or GOOGLE_APPLICATION_CREDENTIALS environment variable.');
+    console.warn('⚠️ Firebase Admin not initialized. Google login will not work. Set FIREBASE_SERVICE_ACCOUNT or GOOGLE_APPLICATION_CREDENTIALS environment variable.');
   }
 } catch (error) {
-  console.error('Firebase Admin initialization error:', error);
+  console.error('❌ Firebase Admin initialization error:', error);
 }
 
 // Export Firestore database instance
-export const db = firebaseAdmin?.firestore();
+export const db = firebaseAdmin ? getFirestore(firebaseAdmin) : null;
 
 // Export Realtime Database instance (if needed)
-export const realtimeDb = firebaseAdmin?.database();
+export const realtimeDb = firebaseAdmin ? getDatabase(firebaseAdmin) : null;
 
 export const verifyIdToken = async (idToken: string) => {
   if (!firebaseAdmin) {

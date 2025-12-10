@@ -10,7 +10,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "clear-db": "ts-node scripts/clear-database.ts"
+    "clear-db": "ts-node scripts/clear-database.ts",
+    "migrate:firestore": "ts-node scripts/migrate-to-firestore.ts"
   },
   "keywords": [],
   "author": "",

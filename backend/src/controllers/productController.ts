@@ -1,12 +1,27 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
+import { USE_FIRESTORE } from '../config/database';
 import {
-  createProduct,
-  deleteProduct,
-  getProductById,
-  listProducts,
-  updateProduct
+  createProduct as createProductPrisma,
+  deleteProduct as deleteProductPrisma,
+  getProductById as getProductByIdPrisma,
+  listProducts as listProductsPrisma,
+  updateProduct as updateProductPrisma
 } from '../services/productService';
+import {
+  createProduct as createProductFirestore,
+  deleteProduct as deleteProductFirestore,
+  getProductById as getProductByIdFirestore,
+  listProducts as listProductsFirestore,
+  updateProduct as updateProductFirestore
+} from '../services/firestore/productService';
+
+// Use Firestore or Prisma based on config
+const listProducts = USE_FIRESTORE ? listProductsFirestore : listProductsPrisma;
+const getProductById = USE_FIRESTORE ? getProductByIdFirestore : getProductByIdPrisma;
+const createProduct = USE_FIRESTORE ? createProductFirestore : createProductPrisma;
+const updateProduct = USE_FIRESTORE ? updateProductFirestore : updateProductPrisma;
+const deleteProduct = USE_FIRESTORE ? deleteProductFirestore : deleteProductPrisma;
 import { productSchema, updateProductSchema } from '../schemas/product';
 import { serializeProduct } from '../utils/serializers';
 

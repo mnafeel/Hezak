@@ -9,22 +9,27 @@
 ### Backend Variables (Keep These):
 
 1. **`NODE_ENV`** = `production`
+
    - **Purpose**: Production mode
    - **Required**: ✅ Yes
 
 2. **`PORT`** = `4000`
+
    - **Purpose**: Server port
    - **Required**: ✅ Yes
 
 3. **`DATABASE_URL`** = `file:./dev.db`
+
    - **Purpose**: SQLite database (keep if using SQLite)
    - **Required**: ✅ Yes (if using SQLite)
 
 4. **`ADMIN_EMAIL`** = `admin@hezak.com`
+
    - **Purpose**: Admin login email
    - **Required**: ✅ Yes
 
 5. **`ADMIN_PASSWORD_HASH`** = `$2b$10$6.qPgfLkKkBYtFNMD/rCNuOBl6Xrqi2NctYZspTtjRpL8MYpwU6y2`
+
    - **Purpose**: Admin password hash
    - **Required**: ✅ Yes
 
@@ -71,6 +76,7 @@ FIREBASE_SERVICE_ACCOUNT={"type":"service_account","project_id":"hezak-f6fb3","p
 ### Step 2: Format as Single Line
 
 **Use online tool**:
+
 1. **Go to**: https://jsonformatter.org/minify
 2. **Paste** your JSON
 3. **Click**: "Minify"
@@ -91,7 +97,7 @@ FIREBASE_SERVICE_ACCOUNT={"type":"service_account","project_id":"hezak-f6fb3","p
 
 1. **Click**: "Add Environment Variable"
 2. **Name**: `FIREBASE_SERVICE_ACCOUNT`
-3. **Value**: *(Paste minified JSON)*
+3. **Value**: _(Paste minified JSON)_
 4. **Environment**: **All** (Production, Preview, Development)
 5. **Save**
 
@@ -134,4 +140,3 @@ FIREBASE_SERVICE_ACCOUNT={"type":"service_account","project_id":"hezak-f6fb3","p
 ---
 
 **Add `FIREBASE_SERVICE_ACCOUNT` to your existing 6 variables!** 🔥
-
