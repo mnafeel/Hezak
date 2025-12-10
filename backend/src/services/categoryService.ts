@@ -229,7 +229,7 @@ export const setCategoryProducts = async (
     // Ensure productIds is an array
     const validProductIds = Array.isArray(productIds) ? productIds.filter((id): id is number => typeof id === 'number' && id > 0) : [];
     
-    return await prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx) => {
       // Verify category exists
       const categoryExists = await tx.category.findUnique({
         where: { id: categoryId }
