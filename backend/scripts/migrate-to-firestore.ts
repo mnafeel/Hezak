@@ -61,17 +61,29 @@ async function migrateProducts() {
 async function migrateCategories() {
   console.log('📁 Migrating categories...');
   
-  const categories = await prisma.category.findMany();
+  const categories = await prisma.category.findMany({
+    include: {
+      products: {
+        select: {
+          productId: true
+        }
+      }
+    }
+  });
   const categoriesRef = getCollection(COLLECTIONS.CATEGORIES);
   let count = 0;
 
   for (const category of categories) {
+    // Get product IDs for this category
+    const productIds = category.products.map((pc) => String(pc.productId));
+    
     await categoriesRef.doc(String(category.id)).set({
       name: category.name,
       slug: category.slug,
       description: category.description || null,
       isTopSelling: category.isTopSelling,
       isFeatured: category.isFeatured,
+      productIds, // Store product IDs directly
       createdAt: category.createdAt.toISOString(),
       updatedAt: category.updatedAt.toISOString()
     });
