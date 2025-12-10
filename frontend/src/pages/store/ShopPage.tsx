@@ -19,7 +19,7 @@ const ShopPage = () => {
   const { data: allProductsData, isLoading: productLoading } = useProducts(
     view ? undefined : selectedCategory ?? undefined
   );
-  const allProducts: Product[] = allProductsData ?? [];
+  const allProducts: Product[] = Array.isArray(allProductsData) ? allProductsData.filter((p): p is Product => p && p.id && p.name) : [];
 
   // Sync selectedCategory with URL param
   useEffect(() => {
