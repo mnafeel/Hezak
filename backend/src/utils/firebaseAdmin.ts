@@ -1,6 +1,7 @@
 import * as admin from 'firebase-admin';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getDatabase } from 'firebase-admin/database';
+import { getStorage } from 'firebase-admin/storage';
 
 // Initialize Firebase Admin SDK
 // You'll need to download your service account key from Firebase Console
@@ -48,6 +49,9 @@ try {
   console.log('ℹ️ Realtime Database not configured (using Firestore)');
 }
 export const realtimeDb = realtimeDbInstance;
+
+// Export Storage instance
+export const storage = firebaseAdmin ? getStorage(firebaseAdmin) : null;
 
 export const verifyIdToken = async (idToken: string) => {
   if (!firebaseAdmin) {

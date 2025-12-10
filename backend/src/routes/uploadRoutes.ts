@@ -6,16 +6,19 @@ import { ensureUploadsDir, uploadImageHandler } from '../controllers/uploadContr
 
 ensureUploadsDir();
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, path.resolve(process.cwd(), 'uploads'));
-  },
-  filename: (_req, file, cb) => {
-    const uniqueSuffix = crypto.randomBytes(8).toString('hex');
-    const ext = path.extname(file.originalname);
-    cb(null, `${Date.now()}-${uniqueSuffix}${ext}`);
-  }
-});
+// Use memory storage for Firebase Storage, disk storage for local
+const storage = process.env.USE_FIREBASE_STORAGE === 'true' 
+  ? multer.memoryStorage() // Store in memory for Firebase Storage
+  : multer.diskStorage({
+      destination: (_req, _file, cb) => {
+        cb(null, path.resolve(process.cwd(), 'uploads'));
+      },
+      filename: (_req, file, cb) => {
+        const uniqueSuffix = crypto.randomBytes(8).toString('hex');
+        const ext = path.extname(file.originalname);
+        cb(null, `${Date.now()}-${uniqueSuffix}${ext}`);
+      }
+    });
 
 const imageFileFilter: multer.Options['fileFilter'] = (_req, file, cb) => {
   if (!file.mimetype.startsWith('image/')) {

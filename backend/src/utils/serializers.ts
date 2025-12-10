@@ -198,13 +198,38 @@ export const serializeProduct = (product: ProductWithCategories | any) => {
         // Check if it's already in the correct format (has categoryId and category)
         const firstItem = product.categories[0];
         if (firstItem && typeof firstItem === 'object' && ('categoryId' in firstItem || 'category' in firstItem)) {
-          return product.categories.map((pc: any) => ({
-            id: pc.id || pc.categoryId || (pc.category?.id ? (typeof pc.category.id === 'string' ? parseInt(pc.category.id) : pc.category.id) : 0),
-            productId: typeof product.id === 'string' ? parseInt(product.id) || 0 : product.id,
-            categoryId: pc.categoryId || (pc.category?.id ? (typeof pc.category.id === 'string' ? parseInt(pc.category.id) : pc.category.id) : 0),
-            createdAt: pc.createdAt || product.createdAt || new Date().toISOString(),
-            category: pc.category || (pc.categoryId ? categories.find(c => c.id === (typeof pc.categoryId === 'string' ? parseInt(pc.categoryId) : pc.categoryId)) : null)
-          }));
+          return product.categories
+            .filter((pc: any) => pc && (pc.categoryId || pc.category))
+            .map((pc: any) => {
+              const catId = pc.categoryId || (pc.category?.id ? (typeof pc.category.id === 'string' ? parseInt(pc.category.id) : pc.category.id) : null);
+              const catObj = pc.category || categories.find(c => c.id === (typeof catId === 'string' ? parseInt(catId) : catId));
+              if (!catId || !catObj) return null;
+              return {
+                id: pc.id || (typeof product.id === 'string' ? parseInt(product.id) || 0 : product.id),
+                productId: typeof product.id === 'string' ? parseInt(product.id) || 0 : product.id,
+                categoryId: typeof catId === 'string' ? parseInt(catId) : catId,
+                createdAt: pc.createdAt || product.createdAt || new Date().toISOString(),
+                category: catObj
+              };
+            })
+            .filter((pc: any): pc is any => pc !== null);
+        }
+        // Handle case where categories array contains just IDs (numbers or strings)
+        if (firstItem && (typeof firstItem === 'number' || typeof firstItem === 'string')) {
+          return product.categories
+            .map((catId: any) => {
+              const id = typeof catId === 'string' ? parseInt(catId) : catId;
+              const catObj = categories.find(c => c.id === id);
+              if (!catObj) return null;
+              return {
+                id: typeof product.id === 'string' ? parseInt(product.id) || 0 : product.id,
+                productId: typeof product.id === 'string' ? parseInt(product.id) || 0 : product.id,
+                categoryId: id,
+                createdAt: product.createdAt || new Date().toISOString(),
+                category: catObj
+              };
+            })
+            .filter((pc: any): pc is any => pc !== null);
         }
       }
       // Otherwise, build from categories array
