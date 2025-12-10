@@ -108,8 +108,16 @@ apiClient.interceptors.response.use(
       fullURL: error.config?.baseURL ? `${error.config.baseURL}${error.config.url}` : error.config?.url
     };
     
-    console.error('API Error:', errorDetails);
-    console.error('Error details:', error);
+    // Log error details in a way that's easier to read
+    console.error('API Error:', JSON.stringify(errorDetails, null, 2));
+    console.error('Error response data:', error.response?.data);
+    console.error('Error message:', error.message);
+    console.error('Full error object:', error);
+    
+    // Also log the error stack if available
+    if (error.stack) {
+      console.error('Error stack:', error.stack);
+    }
     
     // Show helpful message for common issues
     if (!error.response) {
