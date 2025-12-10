@@ -38,6 +38,44 @@ const uploadToFirebaseStorage = async (file: Express.Multer.File): Promise<strin
   return publicUrl;
 };
 
+export const uploadVideoHandler = async (req: Request, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    // Try Firebase Storage first, fallback to local storage
+    let fileUrl: string;
+    let filename: string;
+
+    if (storage && process.env.USE_FIREBASE_STORAGE === 'true') {
+      // Upload to Firebase Storage
+      fileUrl = await uploadToFirebaseStorage(req.file);
+      filename = path.basename(fileUrl);
+      console.log('✅ Video uploaded to Firebase Storage:', fileUrl);
+    } else {
+      // Fallback to local storage
+      filename = req.file.filename;
+      const protocol = req.protocol;
+      const host = req.get('host');
+      const baseUrl = `${protocol}://${host}`;
+      fileUrl = `${baseUrl}/uploads/${filename}`;
+      console.log('⚠️ Video stored locally (will be lost on server restart):', fileUrl);
+    }
+
+    return res.status(201).json({
+      url: fileUrl,
+      filename
+    });
+  } catch (error) {
+    console.error('Error in uploadVideoHandler:', error);
+    res.status(500).json({ 
+      message: 'Failed to upload video',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
 export const uploadImageHandler = async (req: Request, res: Response) => {
   try {
     if (!req.file) {

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
 import crypto from 'crypto';
-import { ensureUploadsDir, uploadImageHandler } from '../controllers/uploadController';
+import { ensureUploadsDir, uploadImageHandler, uploadVideoHandler } from '../controllers/uploadController';
 
 ensureUploadsDir();
 
@@ -114,8 +114,8 @@ router.post('/video', (req, res) => {
         });
       }
 
-      // Use the same handler for videos (it just returns the file URL)
-      return uploadImageHandler(req, res);
+      // Use video handler
+      return uploadVideoHandler(req, res);
     });
   } catch (error) {
     console.error('Error in video upload route:', error);
