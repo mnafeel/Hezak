@@ -232,6 +232,10 @@ export const deleteCategory = async (id: number) => {
 
 export const setCategoryProducts = async (categoryId: number, productIds: number[]) => {
   try {
+    if (!db) {
+      throw new Error('Firestore not initialized. Please configure FIREBASE_SERVICE_ACCOUNT.');
+    }
+
     const categoryRef = getCollection(COLLECTIONS.CATEGORIES).doc(String(categoryId));
     const categoryDoc = await categoryRef.get();
 
@@ -239,7 +243,7 @@ export const setCategoryProducts = async (categoryId: number, productIds: number
       throw new Error(`Category with id ${categoryId} not found`);
     }
 
-    // Convert product IDs to strings
+    // Convert product IDs to strings (Firestore uses string IDs)
     const productIdStrings = productIds.map((id) => String(id));
 
     // Update category with product IDs
@@ -249,41 +253,51 @@ export const setCategoryProducts = async (categoryId: number, productIds: number
     });
 
     // Also update products to include this category
-    const { db } = await import('../../utils/firebaseAdmin');
-    if (!db) throw new Error('Firestore not initialized');
-    const batch = db.batch();
+    // Get products that should be in this category
+    const productsToUpdate: Array<{ ref: any; categoryIds: string[] }> = [];
     
     // Get all products
     const allProductsSnapshot = await getCollection(COLLECTIONS.PRODUCTS).get();
+    const categoryIdString = String(categoryId);
     
-    // Update each product's categoryIds
+    // Find products that need updates
     allProductsSnapshot.docs.forEach((doc) => {
       const productData = doc.data() as any;
       const currentCategoryIds = (productData.categoryIds || []) as string[];
-      const categoryIdString = String(categoryId);
+      const productDocId = doc.id; // Firestore document ID (should match product ID)
       
-      if (productIdStrings.includes(doc.id)) {
-        // Product should be in this category
-        if (!currentCategoryIds.includes(categoryIdString)) {
-          batch.update(doc.ref, {
-            categoryIds: [...currentCategoryIds, categoryIdString]
-          });
-        }
-      } else {
-        // Product should not be in this category
-        if (currentCategoryIds.includes(categoryIdString)) {
-          batch.update(doc.ref, {
-            categoryIds: currentCategoryIds.filter((id) => id !== categoryIdString)
-          });
-        }
+      // Check if this product should be in the category
+      const shouldBeInCategory = productIdStrings.includes(productDocId);
+      const isInCategory = currentCategoryIds.includes(categoryIdString);
+      
+      if (shouldBeInCategory && !isInCategory) {
+        // Add category to product
+        productsToUpdate.push({
+          ref: doc.ref,
+          categoryIds: [...currentCategoryIds, categoryIdString]
+        });
+      } else if (!shouldBeInCategory && isInCategory) {
+        // Remove category from product
+        productsToUpdate.push({
+          ref: doc.ref,
+          categoryIds: currentCategoryIds.filter((id) => id !== categoryIdString)
+        });
       }
     });
     
-    await batch.commit();
+    // Batch update products (Firestore batch limit is 500)
+    if (productsToUpdate.length > 0) {
+      const batch = db.batch();
+      productsToUpdate.forEach(({ ref, categoryIds }) => {
+        batch.update(ref, { categoryIds });
+      });
+      await batch.commit();
+    }
 
     return getCategoryById(categoryId, { includeProducts: true });
   } catch (error) {
     console.error('Error in setCategoryProducts:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
     throw error;
   }
 };
