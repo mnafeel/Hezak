@@ -77,9 +77,18 @@ apiClient.interceptors.response.use(
     
     if (error.response?.status === 401) {
       const url = error.config?.url || '';
+      const method = error.config?.method?.toLowerCase() || 'get';
       
-      // Only clear the relevant auth store based on the endpoint
-      if (url.startsWith('/admin/') || url.startsWith('/categories/') || url.startsWith('/products/') || url.startsWith('/banners/')) {
+      // Check if this is an admin endpoint (mutations on products/categories/banners)
+      const isAdminEndpoint = 
+        url.startsWith('/admin/') ||
+        (url.startsWith('/products') && (method === 'post' || method === 'put' || method === 'delete')) ||
+        (url.startsWith('/categories') && (method === 'post' || method === 'put' || method === 'delete')) ||
+        (url.startsWith('/banners') && (method === 'post' || method === 'put' || method === 'delete')) ||
+        (url.startsWith('/upload/') && method === 'post') ||
+        (url.startsWith('/settings/') && (method === 'put' || method === 'post'));
+      
+      if (isAdminEndpoint) {
         // Admin endpoint - clear admin auth and redirect to login
         const adminStore = useAdminAuthStore.getState();
         adminStore.clearAuth();
@@ -95,17 +104,19 @@ apiClient.interceptors.response.use(
           setTimeout(() => {
             window.location.href = `/${adminSlug}/login`;
           }, 1000);
+        } else {
+          // Not in admin page, but got 401 on admin endpoint - show error
+          toast.error('You need to be logged in as admin to perform this action.');
         }
       } else if (url.startsWith('/orders/me') || url.startsWith('/auth/')) {
         // User endpoint - clear user auth only
         useUserAuthStore.getState().clearAuth();
       } else {
         // For other endpoints, clear both (fallback)
-        // But don't clear if it's a public endpoint that might return 401
-        const publicEndpoints = ['/products', '/categories'];
-        const isPublicEndpoint = publicEndpoints.some(ep => url.startsWith(ep));
+        // But don't clear if it's a public GET endpoint that might return 401
+        const isPublicGet = method === 'get' && (url.startsWith('/products') || url.startsWith('/categories') || url.startsWith('/banners'));
         
-        if (!isPublicEndpoint) {
+        if (!isPublicGet) {
           useAdminAuthStore.getState().clearAuth();
           useUserAuthStore.getState().clearAuth();
         }
