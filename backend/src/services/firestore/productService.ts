@@ -234,18 +234,41 @@ export const updateProduct = async (id: number, input: UpdateProductInput) => {
     if (input.name !== undefined) updateData.name = input.name;
     if (input.description !== undefined) updateData.description = input.description;
     if (input.imageUrl !== undefined) updateData.imageUrl = input.imageUrl;
-    if (input.gallery !== undefined) updateData.gallery = input.gallery;
-    if (input.colors !== undefined) updateData.colors = input.colors;
-    if (input.sizes !== undefined) updateData.sizes = input.sizes;
+    if (input.gallery !== undefined) {
+      updateData.gallery = input.gallery.filter((url): url is string => url !== undefined && url !== null && url !== '');
+    }
+    if (input.colors !== undefined) {
+      // Filter out undefined values from colors (Firestore doesn't accept undefined)
+      updateData.colors = input.colors.map((color) => {
+        const sanitized: any = { name: color.name };
+        if (color.hex !== undefined && color.hex !== null && color.hex !== '') {
+          sanitized.hex = color.hex;
+        }
+        if (color.imageUrl !== undefined && color.imageUrl !== null && color.imageUrl !== '') {
+          sanitized.imageUrl = color.imageUrl;
+        }
+        return sanitized;
+      });
+    }
+    if (input.sizes !== undefined) {
+      updateData.sizes = input.sizes.filter((size): size is { name: string } => size !== undefined && size !== null && size.name !== undefined);
+    }
     if (input.itemType !== undefined) updateData.itemType = input.itemType;
     if (input.inventory !== undefined) updateData.inventory = input.inventory;
-    if (input.inventoryVariants !== undefined) updateData.inventoryVariants = input.inventoryVariants;
+    if (input.inventoryVariants !== undefined) {
+      updateData.inventoryVariants = input.inventoryVariants.filter((variant): variant is any => 
+        variant !== undefined && 
+        variant !== null && 
+        variant.colorName !== undefined && 
+        variant.sizeName !== undefined
+      );
+    }
     if (input.price !== undefined) updateData.priceCents = Math.round(input.price * 100);
     if (input.isFeatured !== undefined) updateData.isFeatured = input.isFeatured;
 
     // Update category IDs if provided
     if (input.categoryIds !== undefined) {
-      updateData.categoryIds = input.categoryIds.map((id) => String(id));
+      updateData.categoryIds = input.categoryIds.map((id) => String(id)).filter((id): id is string => id !== undefined && id !== null);
     }
 
     await productRef.update(updateData);
