@@ -191,14 +191,31 @@ export const serializeProduct = (product: ProductWithCategories | any) => {
     isFeatured: product.isFeatured,
     createdAt: product.createdAt,
     updatedAt: product.updatedAt,
-    category: primaryCategory
-      ? {
-          id: primaryCategory.id,
-          name: primaryCategory.name,
-          slug: primaryCategory.slug
+    category: primaryCategory,
+    categories: (() => {
+      // If categories already have the correct structure (from Firestore), use them
+      if (product.categories && Array.isArray(product.categories) && product.categories.length > 0) {
+        // Check if it's already in the correct format (has categoryId and category)
+        const firstItem = product.categories[0];
+        if (firstItem && typeof firstItem === 'object' && ('categoryId' in firstItem || 'category' in firstItem)) {
+          return product.categories.map((pc: any) => ({
+            id: pc.id || pc.categoryId || (pc.category?.id ? (typeof pc.category.id === 'string' ? parseInt(pc.category.id) : pc.category.id) : 0),
+            productId: typeof product.id === 'string' ? parseInt(product.id) || 0 : product.id,
+            categoryId: pc.categoryId || (pc.category?.id ? (typeof pc.category.id === 'string' ? parseInt(pc.category.id) : pc.category.id) : 0),
+            createdAt: pc.createdAt || product.createdAt || new Date().toISOString(),
+            category: pc.category || (pc.categoryId ? categories.find(c => c.id === (typeof pc.categoryId === 'string' ? parseInt(pc.categoryId) : pc.categoryId)) : null)
+          }));
         }
-      : null,
-    categories
+      }
+      // Otherwise, build from categories array
+      return categories.map((cat) => ({
+        id: typeof product.id === 'string' ? parseInt(product.id) || 0 : product.id,
+        productId: typeof product.id === 'string' ? parseInt(product.id) || 0 : product.id,
+        categoryId: cat.id,
+        createdAt: product.createdAt || new Date().toISOString(),
+        category: cat
+      }));
+    })()
   };
 };
 
