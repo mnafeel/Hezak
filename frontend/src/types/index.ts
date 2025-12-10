@@ -18,6 +18,11 @@ export interface CategoryProductSummary {
   id: number;
   name: string;
   itemType: string;
+  category?: {
+    id: number;
+    name: string;
+    slug: string;
+  } | null;
 }
 
 export interface Product {
@@ -42,8 +47,14 @@ export interface Product {
   } | null;
   categories?: Array<{
     id: number;
-    name: string;
-    slug: string;
+    productId: number;
+    categoryId: number;
+    createdAt: string;
+    category?: {
+      id: number;
+      name: string;
+      slug: string;
+    } | null;
   }>;
 }
 
