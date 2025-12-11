@@ -88,37 +88,44 @@ export const listProducts = async (categorySlug?: string) => {
       const categoryId = categoriesSnapshot.docs[0].id;
 
       // Get all products with this category
+      // Check both string and number formats for categoryId
       const allProductsSnapshot = await productsRef.get();
       productIds = allProductsSnapshot.docs
         .filter((doc) => {
           const data = doc.data() as FirestoreProduct;
-          return data.categoryIds?.includes(categoryId);
+          if (!data.categoryIds || !Array.isArray(data.categoryIds)) {
+            return false;
+          }
+          // Check if categoryId (string) matches any categoryId in the array (could be string or number)
+          return data.categoryIds.some((id) => {
+            const idStr = String(id);
+            const catIdStr = String(categoryId);
+            return idStr === catIdStr;
+          });
         })
         .map((doc) => doc.id);
     }
 
-    // Firestore 'in' queries are limited to 10 items
-    let snapshot;
+    // Get all products and filter in memory (Firestore doesn't support __name__ in where clauses)
+    const allProductsSnapshot = await productsRef.get();
+    let products: FirestoreProduct[] = [];
+
     if (productIds && productIds.length > 0) {
-      // If we have category filter, get products in batches
-      const batches = [];
-      for (let i = 0; i < productIds.length; i += 10) {
-        const batch = productIds.slice(i, i + 10);
-        batches.push(productsRef.where('__name__', 'in', batch).get());
-      }
-      const results = await Promise.all(batches);
-      // Combine results
-      const allDocs: any[] = [];
-      results.forEach((result) => {
-        allDocs.push(...result.docs);
-      });
-      snapshot = { docs: allDocs };
+      // Filter products that match the category
+      const productIdSet = new Set(productIds);
+      products = allProductsSnapshot.docs
+        .filter((doc) => productIdSet.has(doc.id))
+        .map((doc) => {
+          const data = doc.data() as FirestoreProduct;
+          return {
+            id: doc.id,
+            ...data
+          } as FirestoreProduct;
+        });
     } else {
       // Get all products without category filter
-      snapshot = await productsRef.get();
+      products = snapshotToArray<FirestoreProduct>(allProductsSnapshot);
     }
-
-    const products = snapshotToArray<FirestoreProduct>(snapshot);
     
     // Sort by createdAt desc in memory (since we can't use orderBy without index)
     products.sort((a, b) => {
