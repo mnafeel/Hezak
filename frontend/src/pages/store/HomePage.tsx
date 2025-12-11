@@ -15,7 +15,15 @@ const HomePage = () => {
   const { data: allProductsData, isLoading: productLoading } = useProducts();
   const { data: categories = [] } = useCategories();
   const featuredCount = useFeaturedCount().data;
-  const allProducts: Product[] = allProductsData ?? [];
+  const allProducts: Product[] = Array.isArray(allProductsData) 
+    ? allProductsData.filter((p): p is Product => {
+        if (!p || !p.id || !p.name) {
+          console.warn('HomePage: Filtered out invalid product:', p);
+          return false;
+        }
+        return true;
+      })
+    : [];
   const { getTextColor, getGlassPanelClass, getHoverEffect, getShadowClass } = useThemeColors();
   const theme = useThemeStore((state) => state.theme);
 
