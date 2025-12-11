@@ -19,7 +19,15 @@ const ShopPage = () => {
   const { data: allProductsData, isLoading: productLoading } = useProducts(
     view ? undefined : selectedCategory ?? undefined
   );
-  const allProducts: Product[] = Array.isArray(allProductsData) ? allProductsData.filter((p): p is Product => p && p.id && p.name) : [];
+  const allProducts: Product[] = Array.isArray(allProductsData) 
+    ? allProductsData.filter((p): p is Product => {
+        if (!p || !p.id || !p.name) {
+          console.warn('Filtered out invalid product:', p);
+          return false;
+        }
+        return true;
+      })
+    : [];
 
   // Sync selectedCategory with URL param
   useEffect(() => {
@@ -174,13 +182,16 @@ const ShopPage = () => {
           </motion.div>
         ) : products.length > 0 ? (
           <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {products.map((product, index) => {
-              // Validate product data before rendering
-              if (!product || !product.id || !product.name) {
-                console.warn('Invalid product data:', product);
-                return null;
-              }
-              return (
+            {products
+              .filter((product): product is Product => {
+                // Filter out invalid products
+                if (!product || !product.id || !product.name) {
+                  console.warn('Invalid product data:', product);
+                  return false;
+                }
+                return true;
+              })
+              .map((product, index) => (
                 <motion.div
                   key={product.id}
                   initial={{ opacity: 0, y: 20 }}
@@ -189,8 +200,7 @@ const ShopPage = () => {
                 >
                   <ProductCard product={product} />
                 </motion.div>
-              );
-            })}
+              ))}
           </div>
         ) : allProducts.length > 0 ? (
           <motion.div
