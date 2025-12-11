@@ -19,15 +19,34 @@ const ShopPage = () => {
   const { data: allProductsData, isLoading: productLoading } = useProducts(
     view ? undefined : selectedCategory ?? undefined
   );
-  const allProducts: Product[] = Array.isArray(allProductsData) 
-    ? allProductsData.filter((p): p is Product => {
-        if (!p || !p.id || !p.name) {
-          console.warn('Filtered out invalid product:', p);
-          return false;
-        }
-        return true;
-      })
-    : [];
+  const allProducts: Product[] = (() => {
+    console.log('ShopPage: allProductsData:', { 
+      isArray: Array.isArray(allProductsData), 
+      length: Array.isArray(allProductsData) ? allProductsData.length : 'not array',
+      isLoading: productLoading,
+      data: allProductsData
+    });
+    
+    if (!Array.isArray(allProductsData)) {
+      console.warn('ShopPage: allProductsData is not an array:', allProductsData);
+      return [];
+    }
+    
+    const filtered = allProductsData.filter((p): p is Product => {
+      if (!p || !p.id || !p.name) {
+        console.warn('ShopPage: Filtered out invalid product:', p);
+        return false;
+      }
+      return true;
+    });
+    
+    console.log('ShopPage: Filtered products:', { 
+      original: allProductsData.length, 
+      filtered: filtered.length 
+    });
+    
+    return filtered;
+  })();
 
   // Sync selectedCategory with URL param
   useEffect(() => {
@@ -133,7 +152,7 @@ const ShopPage = () => {
                 ? 'Loading...'
                 : `${products.length} ${products.length === 1 ? 'product' : 'products'} ${
                     view || selectedCategory ? 'found' : 'available'
-                  } (${allProducts.length} total)`}
+                  }${allProducts.length !== products.length ? ` (${allProducts.length} total)` : ''}`}
             </p>
           </div>
           {(view || selectedCategory) && (
