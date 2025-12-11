@@ -5,7 +5,15 @@ import { useUserAuthStore } from '../store/userAuth';
 import { getErrorMessage } from './errorHandler';
 
 // Use environment variable for production, fallback to /api for development (Vite proxy)
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+// In production (GitHub Pages), use the full backend URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || 
+  (import.meta.env.PROD ? 'https://hezak-backend.onrender.com/api' : '/api');
+
+console.log('API Client initialized:', {
+  VITE_API_URL: import.meta.env.VITE_API_URL,
+  PROD: import.meta.env.PROD,
+  baseURL: API_BASE_URL
+});
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
