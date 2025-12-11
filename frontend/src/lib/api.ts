@@ -20,9 +20,23 @@ export const fetchProducts = async (category?: string): Promise<Product[]> => {
       params: category ? { category } : undefined
     });
     const data = response.data;
-    return Array.isArray(data) ? data : [];
+    console.log('fetchProducts response:', { 
+      category, 
+      dataLength: Array.isArray(data) ? data.length : 'not array',
+      dataType: typeof data,
+      firstItem: Array.isArray(data) && data.length > 0 ? { id: data[0].id, name: data[0].name } : null
+    });
+    if (!Array.isArray(data)) {
+      console.warn('fetchProducts: response.data is not an array:', data);
+      return [];
+    }
+    return data;
   } catch (error) {
     console.error('Error fetching products:', error);
+    if (error instanceof Error) {
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     return [];
   }
 };
