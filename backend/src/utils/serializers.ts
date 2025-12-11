@@ -215,21 +215,22 @@ export const serializeProduct = (product: ProductWithCategories | any) => {
             .filter((pc: any): pc is any => pc !== null);
         }
         // Handle case where categories array contains just IDs (numbers or strings)
+        // In this case, we need to use the extracted categories array (which should have category objects)
         if (firstItem && (typeof firstItem === 'number' || typeof firstItem === 'string')) {
-          return product.categories
-            .map((catId: any) => {
-              const id = typeof catId === 'string' ? parseInt(catId) : catId;
-              const catObj = categories.find(c => c.id === id);
-              if (!catObj) return null;
-              return {
-                id: typeof product.id === 'string' ? parseInt(product.id) || 0 : product.id,
-                productId: typeof product.id === 'string' ? parseInt(product.id) || 0 : product.id,
-                categoryId: id,
-                createdAt: product.createdAt || new Date().toISOString(),
-                category: catObj
-              };
-            })
-            .filter((pc: any): pc is any => pc !== null);
+          // If categories array contains just IDs, we should have already extracted category objects above
+          // But if we're here, it means the categories weren't properly extracted
+          // So we'll build from the extracted categories array (which should have objects)
+          if (categories.length > 0) {
+            return categories.map((cat) => ({
+              id: typeof product.id === 'string' ? parseInt(product.id) || 0 : product.id,
+              productId: typeof product.id === 'string' ? parseInt(product.id) || 0 : product.id,
+              categoryId: typeof cat.id === 'string' ? parseInt(cat.id) || 0 : cat.id,
+              createdAt: product.createdAt || new Date().toISOString(),
+              category: cat
+            }));
+          }
+          // If no categories extracted, return empty array
+          return [];
         }
       }
       // Otherwise, build from categories array
