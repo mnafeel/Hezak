@@ -1,9 +1,7 @@
 import { db } from './firebaseAdmin';
 import type { Firestore } from 'firebase-admin/firestore';
 
-if (!db) {
-  console.warn('⚠️ Firestore database not initialized. Please configure FIREBASE_SERVICE_ACCOUNT.');
-}
+// In Firebase Functions, db is always available
 
 // Collection names
 export const COLLECTIONS = {
@@ -20,9 +18,7 @@ export const COLLECTIONS = {
 
 // Helper to get collection reference
 export const getCollection = (collectionName: string) => {
-  if (!db) {
-    throw new Error('Firestore database not initialized. Please configure FIREBASE_SERVICE_ACCOUNT environment variable.');
-  }
+  // In Firebase Functions, db is always available
   return db.collection(collectionName);
 };
 
