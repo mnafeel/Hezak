@@ -18,27 +18,60 @@ export const fetchProducts = async (category?: string): Promise<Product[]> => {
   try {
     const url = '/products';
     const params = category ? { category } : undefined;
+    const fullUrl = `${apiClient.defaults.baseURL}${url}${params ? `?category=${params.category}` : ''}`;
+    
     console.log('🌐 fetchProducts called:', { 
       url, 
       category, 
       params,
-      baseURL: apiClient.defaults.baseURL
+      baseURL: apiClient.defaults.baseURL,
+      fullUrl
     });
     
-    const response = await apiClient.get<Product[]>(url, { params });
+    let response;
+    try {
+      response = await apiClient.get<Product[]>(url, { params });
+      console.log('✅ fetchProducts: API call successful', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: response.headers
+      });
+    } catch (apiError) {
+      console.error('❌ fetchProducts: API call failed:', apiError);
+      if (apiError && typeof apiError === 'object' && 'response' in apiError) {
+        const axiosError = apiError as any;
+        console.error('API Error Details:', {
+          status: axiosError.response?.status,
+          statusText: axiosError.response?.statusText,
+          data: axiosError.response?.data,
+          config: {
+            url: axiosError.config?.url,
+            method: axiosError.config?.method,
+            baseURL: axiosError.config?.baseURL
+          }
+        });
+      }
+      throw apiError;
+    }
+    
     const data = response.data;
     
     console.log('📥 fetchProducts response received:', { 
       category, 
       status: response.status,
+      statusText: response.statusText,
       dataLength: Array.isArray(data) ? data.length : 'not array',
       dataType: typeof data,
       isArray: Array.isArray(data),
+      rawData: data,
       firstItem: Array.isArray(data) && data.length > 0 ? { 
         id: data[0].id, 
         name: data[0].name,
         hasCategory: !!data[0].category,
-        categoriesCount: Array.isArray(data[0].categories) ? data[0].categories.length : 0
+        categoryId: data[0].category?.id,
+        categoryIdType: typeof data[0].category?.id,
+        categoriesCount: Array.isArray(data[0].categories) ? data[0].categories.length : 0,
+        fullProduct: data[0]
       } : null,
       fullResponse: Array.isArray(data) && data.length > 0 ? data.slice(0, 2) : data
     });
