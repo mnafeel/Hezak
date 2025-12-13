@@ -31,14 +31,20 @@ export const useProducts = (categorySlug?: string) => {
           console.error('Error message:', error.message);
           console.error('Error stack:', error.stack);
         }
-        return [];
+        // Don't return empty array on error - let React Query handle it
+        throw error;
       }
     },
-    initialData: [],
-    retry: 2,
+    // Remove initialData to prevent caching empty arrays
+    retry: 3, // Retry 3 times on failure
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
     refetchOnWindowFocus: true,
+    refetchOnMount: true, // Always refetch on mount
+    refetchOnReconnect: true, // Refetch when network reconnects
     staleTime: 0, // Always consider data stale to force refetch
-    gcTime: 0 // Don't cache to ensure fresh data
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes (was 0, which might cause issues)
+    enabled: true, // Always enable the query
+    placeholderData: undefined // Don't use placeholder data
   });
 };
 

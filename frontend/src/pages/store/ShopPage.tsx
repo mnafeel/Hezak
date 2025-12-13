@@ -16,9 +16,22 @@ const ShopPage = () => {
   
   const [selectedCategory, setSelectedCategory] = useState<string | null>(categoryFromUrl);
   const { data: categories = [], isLoading: categoryLoading } = useCategories();
-  const { data: allProductsData, isLoading: productLoading } = useProducts(
+  const { 
+    data: allProductsData, 
+    isLoading: productLoading, 
+    isError: productError,
+    error: productErrorDetails,
+    refetch: refetchProducts
+  } = useProducts(
     view ? undefined : selectedCategory ?? undefined
   );
+  
+  // Log error state for debugging
+  useEffect(() => {
+    if (productError) {
+      console.error('❌ ShopPage: Product fetch error:', productErrorDetails);
+    }
+  }, [productError, productErrorDetails]);
   const allProducts: Product[] = (() => {
     console.log('ShopPage: allProductsData:', { 
       isArray: Array.isArray(allProductsData), 
