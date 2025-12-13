@@ -87,17 +87,26 @@ export const fetchProducts = async (category?: string): Promise<Product[]> => {
     
     // Validate products before returning
     const validProducts = data.filter((product): product is Product => {
-      const isValid = product && 
-        product.id && 
-        product.name && 
-        typeof product.name === 'string' &&
-        product.name.trim() !== '';
-      
-      if (!isValid) {
-        console.warn('⚠️ Invalid product filtered out:', product);
+      // Check if product exists and has required fields
+      if (!product) {
+        console.warn('⚠️ Invalid product filtered out: null/undefined');
+        return false;
       }
       
-      return isValid;
+      // Check ID - can be number or string that can be converted to number
+      const productId = typeof product.id === 'string' ? parseInt(product.id) : product.id;
+      if (!productId || (typeof productId === 'number' && (isNaN(productId) || productId <= 0))) {
+        console.warn('⚠️ Invalid product filtered out: invalid ID', { id: product.id, productId });
+        return false;
+      }
+      
+      // Check name
+      if (!product.name || typeof product.name !== 'string' || product.name.trim() === '') {
+        console.warn('⚠️ Invalid product filtered out: invalid name', { id: product.id, name: product.name });
+        return false;
+      }
+      
+      return true;
     });
     
     if (validProducts.length !== data.length) {
@@ -106,11 +115,31 @@ export const fetchProducts = async (category?: string): Promise<Product[]> => {
     
     console.log('✅ fetchProducts returning:', {
       total: validProducts.length,
+      originalCount: data.length,
+      filteredOut: data.length - validProducts.length,
       firstProduct: validProducts.length > 0 ? {
         id: validProducts[0].id,
-        name: validProducts[0].name
-      } : null
+        name: validProducts[0].name,
+        hasCategory: !!validProducts[0].category,
+        categoryId: validProducts[0].category?.id
+      } : null,
+      allProductIds: validProducts.map(p => p.id).slice(0, 5)
     });
+    
+    if (validProducts.length === 0 && data.length > 0) {
+      console.error('❌ All products were filtered out!', {
+        originalData: data.slice(0, 2),
+        reasons: data.map((p, i) => ({
+          index: i,
+          hasId: !!p?.id,
+          id: p?.id,
+          idType: typeof p?.id,
+          hasName: !!p?.name,
+          name: p?.name,
+          nameType: typeof p?.name
+        }))
+      });
+    }
     
     return validProducts;
   } catch (error) {
