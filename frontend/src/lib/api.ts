@@ -94,7 +94,7 @@ export const fetchProducts = async (category?: string): Promise<Product[]> => {
       console.warn('⚠️ fetchProducts: response.data is not an array:', {
         data,
         dataType: typeof data,
-        constructor: data?.constructor?.name
+        constructor: data && typeof data === 'object' && 'constructor' in data ? (data as any).constructor?.name : 'unknown'
       });
       return [];
     }
