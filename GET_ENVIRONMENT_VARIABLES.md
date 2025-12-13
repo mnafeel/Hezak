@@ -35,12 +35,14 @@
 7. **Download**: JSON file (e.g., `hezak-f6fb3-firebase-adminsdk-xxxxx.json`)
 
 **How to Add to Vercel**:
+
 - Open the downloaded JSON file
 - **Copy the ENTIRE content** (all of it, including `{` and `}`)
 - In Vercel → Environment Variables → **Paste the entire JSON**
 - **Important**: Vercel accepts multi-line JSON, just paste it all
 
 **Example**:
+
 ```json
 {
   "type": "service_account",
@@ -67,6 +69,7 @@
 **Where**: You already have this! It's your Firebase project ID + `.appspot.com`
 
 **If you need to find it**:
+
 1. Firebase Console → **Storage**
 2. Look at the bucket name (usually `your-project-id.appspot.com`)
 
@@ -106,11 +109,13 @@ node -e "const bcrypt = require('bcrypt'); bcrypt.hash('YOUR_PASSWORD_HERE', 10)
 **Replace `YOUR_PASSWORD_HERE`** with your actual admin password.
 
 **Example**:
+
 ```bash
 node -e "const bcrypt = require('bcrypt'); bcrypt.hash('admin123', 10).then(hash => console.log(hash));"
 ```
 
 **Output** will be something like:
+
 ```
 $2b$10$abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUV
 ```
@@ -144,6 +149,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
 **Output** will be a long random string like:
+
 ```
 a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6
 ```
@@ -163,6 +169,7 @@ a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6
 ### Option C: Simple Secret (Less Secure)
 
 Just use a long random string:
+
 ```
 hezak-secret-key-2024-production-min-16-chars
 ```
@@ -173,16 +180,16 @@ hezak-secret-key-2024-production-min-16-chars
 
 ## 📋 Quick Summary
 
-| Variable | Value | Where to Get |
-|----------|-------|--------------|
-| `NODE_ENV` | `production` | Just set it |
-| `USE_FIRESTORE` | `true` | Just set it |
-| `FIREBASE_SERVICE_ACCOUNT` | JSON object | Firebase Console → Service Accounts → Generate Key |
-| `FIREBASE_STORAGE_BUCKET` | `hezak-f6fb3.appspot.com` | You already have it |
-| `USE_FIREBASE_STORAGE` | `true` | Just set it |
-| `ADMIN_EMAIL` | Your email | Choose any email |
-| `ADMIN_PASSWORD_HASH` | `$2b$10$...` | Generate with bcrypt (see above) |
-| `JWT_SECRET` | Random string | Generate with crypto (see above) |
+| Variable                   | Value                     | Where to Get                                       |
+| -------------------------- | ------------------------- | -------------------------------------------------- |
+| `NODE_ENV`                 | `production`              | Just set it                                        |
+| `USE_FIRESTORE`            | `true`                    | Just set it                                        |
+| `FIREBASE_SERVICE_ACCOUNT` | JSON object               | Firebase Console → Service Accounts → Generate Key |
+| `FIREBASE_STORAGE_BUCKET`  | `hezak-f6fb3.appspot.com` | You already have it                                |
+| `USE_FIREBASE_STORAGE`     | `true`                    | Just set it                                        |
+| `ADMIN_EMAIL`              | Your email                | Choose any email                                   |
+| `ADMIN_PASSWORD_HASH`      | `$2b$10$...`              | Generate with bcrypt (see above)                   |
+| `JWT_SECRET`               | Random string             | Generate with crypto (see above)                   |
 
 ---
 
@@ -251,6 +258,7 @@ JWT_SECRET=a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6
 4. **Repeat for each variable**
 
 **For FIREBASE_SERVICE_ACCOUNT**:
+
 - Paste the **entire JSON** (multi-line is OK in Vercel)
 
 ---
@@ -281,4 +289,3 @@ node -e "console.log('JWT_SECRET=' + require('crypto').randomBytes(32).toString(
 ---
 
 **Now you have all the values!** Add them to Vercel! 🚀
-
