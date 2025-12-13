@@ -16,26 +16,84 @@ import type {
 
 export const fetchProducts = async (category?: string): Promise<Product[]> => {
   try {
-    const response = await apiClient.get<Product[]>('/products', {
-      params: category ? { category } : undefined
-    });
-    const data = response.data;
-    console.log('fetchProducts response:', { 
+    const url = '/products';
+    const params = category ? { category } : undefined;
+    console.log('🌐 fetchProducts called:', { 
+      url, 
       category, 
+      params,
+      baseURL: apiClient.defaults.baseURL
+    });
+    
+    const response = await apiClient.get<Product[]>(url, { params });
+    const data = response.data;
+    
+    console.log('📥 fetchProducts response received:', { 
+      category, 
+      status: response.status,
       dataLength: Array.isArray(data) ? data.length : 'not array',
       dataType: typeof data,
-      firstItem: Array.isArray(data) && data.length > 0 ? { id: data[0].id, name: data[0].name } : null
+      isArray: Array.isArray(data),
+      firstItem: Array.isArray(data) && data.length > 0 ? { 
+        id: data[0].id, 
+        name: data[0].name,
+        hasCategory: !!data[0].category,
+        categoriesCount: Array.isArray(data[0].categories) ? data[0].categories.length : 0
+      } : null,
+      fullResponse: Array.isArray(data) && data.length > 0 ? data.slice(0, 2) : data
     });
+    
     if (!Array.isArray(data)) {
-      console.warn('fetchProducts: response.data is not an array:', data);
+      console.warn('⚠️ fetchProducts: response.data is not an array:', {
+        data,
+        dataType: typeof data,
+        constructor: data?.constructor?.name
+      });
       return [];
     }
-    return data;
+    
+    // Validate products before returning
+    const validProducts = data.filter((product): product is Product => {
+      const isValid = product && 
+        product.id && 
+        product.name && 
+        typeof product.name === 'string' &&
+        product.name.trim() !== '';
+      
+      if (!isValid) {
+        console.warn('⚠️ Invalid product filtered out:', product);
+      }
+      
+      return isValid;
+    });
+    
+    if (validProducts.length !== data.length) {
+      console.warn(`⚠️ Filtered out ${data.length - validProducts.length} invalid products`);
+    }
+    
+    console.log('✅ fetchProducts returning:', {
+      total: validProducts.length,
+      firstProduct: validProducts.length > 0 ? {
+        id: validProducts[0].id,
+        name: validProducts[0].name
+      } : null
+    });
+    
+    return validProducts;
   } catch (error) {
-    console.error('Error fetching products:', error);
+    console.error('❌ Error fetching products:', error);
     if (error instanceof Error) {
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
+    }
+    // Log axios error details if available
+    if (error && typeof error === 'object' && 'response' in error) {
+      const axiosError = error as any;
+      console.error('Axios error response:', {
+        status: axiosError.response?.status,
+        statusText: axiosError.response?.statusText,
+        data: axiosError.response?.data
+      });
     }
     return [];
   }
