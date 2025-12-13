@@ -31,15 +31,9 @@ app.get('/health', (_req, res) => {
   });
 });
 
-// Import routes from backend (after copying backend code)
-// Uncomment after running setup script:
-// import { router } from './backend/routes';
-// app.use('/api', router);
-
-// Temporary route for testing
-app.get('/api/test', (_req, res) => {
-  res.json({ message: 'Firebase Functions backend is working!' });
-});
+// Import routes from backend
+import { router } from './backend/routes';
+app.use('/api', router);
 
 // Export as Firebase Function
 // Change region as needed (us-central1, us-east1, europe-west1, asia-northeast1, etc.)
