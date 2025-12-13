@@ -27,11 +27,23 @@ const AdminUsersPage = () => {
   const selectedUser = users.find((u) => u.id === selectedUserId);
 
   const filteredAndSortedUsers = useMemo(() => {
-    // First filter by search query
-    let filtered = users;
+    // First filter out invalid users (missing name or email)
+    const validUsers = users.filter((user) => 
+      user && 
+      user.id && 
+      user.name && 
+      typeof user.name === 'string' && 
+      user.name.trim() !== '' &&
+      user.email && 
+      typeof user.email === 'string' && 
+      user.email.trim() !== ''
+    );
+    
+    // Then filter by search query
+    let filtered = validUsers;
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
-      filtered = users.filter((user) => 
+      filtered = validUsers.filter((user) => 
         user.name.toLowerCase().includes(query) ||
         user.email.toLowerCase().includes(query) ||
         (user.phone && user.phone.toLowerCase().includes(query)) ||
@@ -77,6 +89,18 @@ const AdminUsersPage = () => {
         return sorted;
     }
   }, [users, sortBy, searchQuery]);
+  
+  // Count invalid users (for display)
+  const invalidUsersCount = users.filter((user) => 
+    !user || 
+    !user.id || 
+    !user.name || 
+    typeof user.name !== 'string' || 
+    user.name.trim() === '' ||
+    !user.email || 
+    typeof user.email !== 'string' || 
+    user.email.trim() === ''
+  ).length;
 
   if (isLoading) {
     return (
@@ -96,6 +120,11 @@ const AdminUsersPage = () => {
             <p className="text-sm text-slate-200">
               {filteredAndSortedUsers.length} of {users.length} {users.length === 1 ? 'user' : 'users'}
               {searchQuery && ` matching "${searchQuery}"`}
+              {invalidUsersCount > 0 && (
+                <span className="ml-2 text-amber-400">
+                  ({invalidUsersCount} invalid {invalidUsersCount === 1 ? 'user' : 'users'} filtered out)
+                </span>
+              )}
             </p>
             <div className="flex items-center gap-2">
               <label className="text-sm text-white">Sort by:</label>
@@ -135,11 +164,15 @@ const AdminUsersPage = () => {
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div className="flex items-start gap-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand-500/20 text-xl font-semibold text-brand-300">
-                      {user.name.charAt(0).toUpperCase()}
+                      {(user.name && user.name.trim() ? user.name.charAt(0) : '?').toUpperCase()}
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-white">{user.name}</h3>
-                      <p className="text-sm text-slate-200">{user.email}</p>
+                      <h3 className="text-lg font-semibold text-white">
+                        {user.name && user.name.trim() ? user.name : 'Unknown User'}
+                      </h3>
+                      <p className="text-sm text-slate-200">
+                        {user.email && user.email.trim() ? user.email : 'No email'}
+                      </p>
                       {user.phone && <p className="text-xs text-slate-300">{user.phone}</p>}
                       <p className="mt-1 text-xs text-slate-300">
                         Joined: {formatDate(user.createdAt)} • {user.orders.length}{' '}

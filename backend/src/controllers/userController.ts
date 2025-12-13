@@ -6,7 +6,26 @@ export const getAllUsers = async (req: Request, res: Response) => {
   try {
     const users = await listUsers();
     const serialized = users.map(serializeUser);
-    res.json(serialized);
+    
+    // Filter out invalid users (missing required fields)
+    const validUsers = serialized.filter((user) => 
+      user && 
+      user.id && 
+      user.name && 
+      typeof user.name === 'string' && 
+      user.name.trim() !== '' &&
+      user.name !== 'Invalid User' &&
+      user.email && 
+      typeof user.email === 'string' && 
+      user.email.trim() !== '' &&
+      user.email !== 'invalid@example.com'
+    );
+    
+    if (serialized.length !== validUsers.length) {
+      console.warn(`Filtered out ${serialized.length - validUsers.length} invalid user(s) from response`);
+    }
+    
+    res.json(validUsers);
   } catch (error) {
     console.error('Error fetching users:', error);
     res.status(500).json({ error: 'Failed to fetch users' });
