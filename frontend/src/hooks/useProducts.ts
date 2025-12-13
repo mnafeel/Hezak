@@ -3,10 +3,23 @@ import { fetchProducts } from '../lib/api';
 import type { Product } from '../types';
 
 export const useProducts = (categorySlug?: string) => {
-  return useQuery<Product[]>({
-    queryKey: ['products', categorySlug ?? 'all'],
+  const queryKey = ['products', categorySlug ?? 'all'];
+  
+  console.log('🔵 useProducts hook called:', { 
+    categorySlug, 
+    queryKey,
+    timestamp: new Date().toISOString()
+  });
+  
+  const query = useQuery<Product[]>({
+    queryKey,
     queryFn: async () => {
-      console.log('🔄 useProducts: fetching products with categorySlug:', categorySlug);
+      console.log('🔄 useProducts queryFn EXECUTING:', { 
+        categorySlug, 
+        queryKey,
+        timestamp: new Date().toISOString()
+      });
+      
       try {
         const data = await fetchProducts(categorySlug);
         console.log('✅ useProducts: received data:', { 
@@ -46,5 +59,20 @@ export const useProducts = (categorySlug?: string) => {
     enabled: true, // Always enable the query
     placeholderData: undefined // Don't use placeholder data
   });
+  
+  // Log query state changes
+  console.log('📊 useProducts query state:', {
+    isLoading: query.isLoading,
+    isFetching: query.isFetching,
+    isError: query.isError,
+    isSuccess: query.isSuccess,
+    dataLength: Array.isArray(query.data) ? query.data.length : 'not array',
+    error: query.error,
+    status: query.status,
+    fetchStatus: query.fetchStatus,
+    categorySlug
+  });
+  
+  return query;
 };
 

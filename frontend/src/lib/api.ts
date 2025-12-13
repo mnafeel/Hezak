@@ -15,26 +15,32 @@ import type {
 } from '../types';
 
 export const fetchProducts = async (category?: string): Promise<Product[]> => {
+  const url = '/products';
+  const params = category ? { category } : undefined;
+  const fullUrl = `${apiClient.defaults.baseURL}${url}${params ? `?category=${params.category}` : ''}`;
+  
+  console.log('🌐 fetchProducts CALLED:', { 
+    url, 
+    category, 
+    params,
+    baseURL: apiClient.defaults.baseURL,
+    fullUrl,
+    timestamp: new Date().toISOString(),
+    stackTrace: new Error().stack
+  });
+  
   try {
-    const url = '/products';
-    const params = category ? { category } : undefined;
-    const fullUrl = `${apiClient.defaults.baseURL}${url}${params ? `?category=${params.category}` : ''}`;
-    
-    console.log('🌐 fetchProducts called:', { 
-      url, 
-      category, 
-      params,
-      baseURL: apiClient.defaults.baseURL,
-      fullUrl
-    });
-    
     let response;
     try {
+      console.log('📡 fetchProducts: Making API request...', { fullUrl });
       response = await apiClient.get<Product[]>(url, { params });
       console.log('✅ fetchProducts: API call successful', {
         status: response.status,
         statusText: response.statusText,
-        headers: response.headers
+        headers: response.headers,
+        dataType: typeof response.data,
+        isArray: Array.isArray(response.data),
+        dataLength: Array.isArray(response.data) ? response.data.length : 'not array'
       });
     } catch (apiError) {
       console.error('❌ fetchProducts: API call failed:', apiError);
@@ -47,8 +53,16 @@ export const fetchProducts = async (category?: string): Promise<Product[]> => {
           config: {
             url: axiosError.config?.url,
             method: axiosError.config?.method,
-            baseURL: axiosError.config?.baseURL
-          }
+            baseURL: axiosError.config?.baseURL,
+            fullURL: axiosError.config?.baseURL ? `${axiosError.config.baseURL}${axiosError.config.url}` : axiosError.config?.url
+          },
+          message: axiosError.message,
+          code: axiosError.code
+        });
+      } else if (apiError && typeof apiError === 'object' && 'message' in apiError) {
+        console.error('Network Error:', {
+          message: (apiError as any).message,
+          code: (apiError as any).code
         });
       }
       throw apiError;
