@@ -16,22 +16,32 @@ try {
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
     firebaseAdmin = admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount as admin.ServiceAccount)
+      credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+      storageBucket: process.env.FIREBASE_STORAGE_BUCKET || undefined // Optional: for Firebase Storage
     });
     console.log('✅ Firebase Admin initialized successfully');
+    if (process.env.FIREBASE_STORAGE_BUCKET) {
+      console.log(`✅ Firebase Storage bucket: ${process.env.FIREBASE_STORAGE_BUCKET}`);
+    }
   } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
     // Use service account file path
     firebaseAdmin = admin.initializeApp({
-      credential: admin.credential.applicationDefault()
+      credential: admin.credential.applicationDefault(),
+      storageBucket: process.env.FIREBASE_STORAGE_BUCKET || undefined
     });
     console.log('✅ Firebase Admin initialized successfully');
   } else {
     // For development, you can use a service account file
     // In production, use environment variables
-    console.warn('⚠️ Firebase Admin not initialized. Google login will not work. Set FIREBASE_SERVICE_ACCOUNT or GOOGLE_APPLICATION_CREDENTIALS environment variable.');
+    console.warn('⚠️ Firebase Admin not initialized. Set FIREBASE_SERVICE_ACCOUNT or GOOGLE_APPLICATION_CREDENTIALS environment variable.');
+    console.warn('⚠️ Google login and Firebase Storage will not work without Firebase Admin.');
   }
 } catch (error) {
   console.error('❌ Firebase Admin initialization error:', error);
+  if (error instanceof Error) {
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+  }
 }
 
 // Export Firestore database instance
