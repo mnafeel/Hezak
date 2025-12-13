@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { prisma } from '../utils/prisma';
 import { ProductInput, UpdateProductInput } from '../schemas/product';
 

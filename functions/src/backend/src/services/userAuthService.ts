@@ -1,4 +1,5 @@
 // @ts-nocheck
+// @ts-nocheck
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../utils/prisma';

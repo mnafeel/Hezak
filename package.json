@@ -8,6 +8,6 @@
     "firebase:serve": "cd frontend && firebase serve"
   },
   "devDependencies": {
-    "firebase-tools": "^14.26.0"
+    "firebase-tools": "^14.27.0"
   }
 }

@@ -32,7 +32,7 @@ app.get('/health', (_req, res) => {
 });
 
 // Import routes from backend
-import { router } from './backend/routes';
+import { router } from './backend/src/routes';
 app.use('/api', router);
 
 // Export as Firebase Function

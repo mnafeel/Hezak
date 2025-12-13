@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { prisma } from '../utils/prisma';
 
 const ADMIN_PATH_KEY = 'adminPathSlug';

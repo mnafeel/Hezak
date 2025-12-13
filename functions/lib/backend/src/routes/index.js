@@ -1,0 +1,23 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.router = void 0;
+const express_1 = require("express");
+const productRoutes_1 = require("./productRoutes");
+const categoryRoutes_1 = require("./categoryRoutes");
+const orderRoutes_1 = require("./orderRoutes");
+const adminRoutes_1 = require("./adminRoutes");
+const settingsRoutes_1 = require("./settingsRoutes");
+const uploadRoutes_1 = require("./uploadRoutes");
+const userAuthRoutes_1 = require("./userAuthRoutes");
+const bannerRoutes_1 = require("./bannerRoutes");
+const router = (0, express_1.Router)();
+exports.router = router;
+router.use('/products', productRoutes_1.productRouter);
+router.use('/categories', categoryRoutes_1.categoryRouter);
+router.use('/orders', orderRoutes_1.orderRouter);
+router.use('/admin', adminRoutes_1.adminRouter);
+router.use('/settings', settingsRoutes_1.settingsRouter);
+router.use('/upload', uploadRoutes_1.uploadRouter);
+router.use('/auth', userAuthRoutes_1.userAuthRouter);
+router.use('/banners', bannerRoutes_1.bannerRouter);
+//# sourceMappingURL=index.js.map
