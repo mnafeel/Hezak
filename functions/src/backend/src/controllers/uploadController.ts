@@ -29,7 +29,8 @@ const uploadToFirebaseStorage = async (file: MulterFile): Promise<string> => {
     throw new Error('Firebase Storage not initialized');
   }
 
-  const bucket = storage.bucket();
+  // In Firebase Functions, storage is already a bucket
+  const bucket = storage;
   const fileExtension = path.extname(file.originalname);
   const fileName = `uploads/${Date.now()}-${Math.random().toString(36).substring(7)}${fileExtension}`;
   const fileUpload = bucket.file(fileName);
@@ -60,7 +61,8 @@ export const uploadVideoHandler = async (req: Request, res: Response) => {
     let fileUrl: string;
     let filename: string;
 
-    if (storage && process.env.USE_FIREBASE_STORAGE === 'true') {
+    // In Firebase Functions, always use Firebase Storage
+    if (storage) {
       // Upload to Firebase Storage
       fileUrl = await uploadToFirebaseStorage(req.file);
       filename = path.basename(fileUrl);
@@ -98,7 +100,8 @@ export const uploadImageHandler = async (req: Request, res: Response) => {
     let fileUrl: string;
     let filename: string;
 
-    if (storage && process.env.USE_FIREBASE_STORAGE === 'true') {
+    // In Firebase Functions, always use Firebase Storage
+    if (storage) {
       // Upload to Firebase Storage
       fileUrl = await uploadToFirebaseStorage(req.file);
       filename = path.basename(fileUrl);
