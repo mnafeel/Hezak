@@ -121,7 +121,10 @@ const AdminProductsPage = () => {
   const { mutateAsync: createMutation, isPending: isCreating } = useMutation({
     mutationFn: createProduct,
     onSuccess: () => {
+      // Invalidate both admin and user product queries
       queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      console.log('✅ Product created - cache invalidated for both admin and user queries');
     }
   });
 
@@ -129,14 +132,20 @@ const AdminProductsPage = () => {
     mutationFn: ({ id, data }: { id: number; data: Partial<ProductForm> }) =>
       updateProduct(id, data),
     onSuccess: () => {
+      // Invalidate both admin and user product queries
       queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      console.log('✅ Product updated - cache invalidated for both admin and user queries');
     }
   });
 
   const { mutateAsync: deleteMutation, isPending: isDeleting } = useMutation({
     mutationFn: deleteProduct,
     onSuccess: () => {
+      // Invalidate both admin and user product queries
       queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      console.log('✅ Product deleted - cache invalidated for both admin and user queries');
     }
   });
 
