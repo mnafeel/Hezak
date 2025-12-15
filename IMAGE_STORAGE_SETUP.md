@@ -3,6 +3,7 @@
 ## ⚠️ Important: Use Firebase Storage!
 
 **On Render, local file storage (`/uploads` folder) is NOT persistent!**
+
 - Files will be **lost on server restart**
 - Files will be **lost on redeployment**
 - **Solution**: Use **Firebase Storage** ✅
@@ -57,6 +58,7 @@ service firebase.storage {
 3. **Click**: **Publish**
 
 **This allows**:
+
 - ✅ **Public read** - Anyone can view images (needed for frontend)
 - ✅ **Authenticated write** - Only logged-in admins can upload
 
@@ -67,13 +69,15 @@ service firebase.storage {
 In Render Dashboard → Your Service → Environment:
 
 **Add/Update**:
+
 ```
 USE_FIREBASE_STORAGE=true
 FIREBASE_STORAGE_BUCKET=hezak-f6fb3.appspot.com
 FIREBASE_SERVICE_ACCOUNT=<your-json>
 ```
 
-**Important**: 
+**Important**:
+
 - `USE_FIREBASE_STORAGE=true` enables Firebase Storage
 - `FIREBASE_STORAGE_BUCKET` is your bucket name
 - `FIREBASE_SERVICE_ACCOUNT` is needed for uploads
@@ -104,11 +108,13 @@ https://storage.googleapis.com/hezak-f6fb3.appspot.com/uploads/1234567890-abc123
 ## 🔧 Current Configuration
 
 Your backend is already configured to use Firebase Storage when:
+
 - `USE_FIREBASE_STORAGE=true` is set
 - `FIREBASE_STORAGE_BUCKET` is set
 - `FIREBASE_SERVICE_ACCOUNT` is set
 
 **The code automatically**:
+
 - ✅ Uses Firebase Storage if enabled
 - ✅ Falls back to local storage if not enabled (not recommended on Render)
 
@@ -142,11 +148,13 @@ Make sure these are set in Render environment variables:
 ### Don't Use Local Storage on Render
 
 ❌ **Don't do this**:
+
 - Storing files in `/uploads` folder
 - Using local file system
 - Files will be lost!
 
 ✅ **Do this**:
+
 - Use Firebase Storage
 - Set `USE_FIREBASE_STORAGE=true`
 - Images stored permanently in Firebase
@@ -170,6 +178,7 @@ After setup, test image upload:
 ## 💰 Firebase Storage Free Tier
 
 **You get FREE**:
+
 - ✅ **5 GB storage**
 - ✅ **1 GB downloads/day**
 - ✅ **20,000 uploads/day**
@@ -183,6 +192,7 @@ You only pay if you exceed these limits.
 ## 🚀 After Setup
 
 Once configured:
+
 - ✅ Images upload to Firebase Storage
 - ✅ Images are permanent (won't be lost)
 - ✅ Images load fast from CDN
@@ -191,4 +201,3 @@ Once configured:
 ---
 
 **Your backend is already configured for Firebase Storage!** Just enable it in Firebase Console and set the environment variables on Render! 🖼️
-
