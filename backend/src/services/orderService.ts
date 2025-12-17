@@ -540,7 +540,73 @@ export const createOrder = async (input: CreateOrderInput) => {
   }
 };
 
-export const listOrders = async () => {
+// Helper to fetch order with user and items from Firestore
+const fetchOrderWithDetails = async (orderDoc: any) => {
+  const orderData = orderDoc.data();
+  const orderId = orderDoc.id;
+
+  // Fetch user
+  const userDoc = await getCollection(COLLECTIONS.USERS).doc(orderData.userId).get();
+  const userData = userDoc.exists ? userDoc.data() : null;
+
+  // Fetch order items
+  const orderItemsSnapshot = await getCollection(COLLECTIONS.ORDER_ITEMS)
+    .where('orderId', '==', orderId)
+    .get();
+
+  const orderItems = await Promise.all(
+    orderItemsSnapshot.docs.map(async (itemDoc: any) => {
+      const itemData = itemDoc.data();
+      const productDoc = await getCollection(COLLECTIONS.PRODUCTS).doc(itemData.productId).get();
+      const productData = productDoc.exists ? productDoc.data() : null;
+
+      return {
+        id: parseInt(itemDoc.id) || itemDoc.id,
+        productId: parseInt(itemData.productId) || itemData.productId,
+        quantity: itemData.quantity,
+        unitPriceCents: itemData.unitPriceCents,
+        selectedColor: itemData.selectedColor,
+        selectedColorHex: itemData.selectedColorHex,
+        selectedColorImage: itemData.selectedColorImage,
+        selectedSize: itemData.selectedSize,
+        product: productData ? {
+          id: parseInt(productDoc.id) || productDoc.id,
+          ...productData
+        } : null
+      };
+    })
+  );
+
+  return {
+    id: parseInt(orderId) || orderId,
+    ...orderData,
+    user: userData ? {
+      id: parseInt(orderData.userId) || orderData.userId,
+      ...userData
+    } : null,
+    orderItems
+  };
+};
+
+// List orders from Firestore
+const listOrdersFirestore = async () => {
+  if (!db) {
+    throw new Error('Firestore database not initialized');
+  }
+
+  const ordersSnapshot = await getCollection(COLLECTIONS.ORDERS)
+    .orderBy('createdAt', 'desc')
+    .get();
+
+  const orders = await Promise.all(
+    ordersSnapshot.docs.map((doc) => fetchOrderWithDetails(doc))
+  );
+
+  return orders;
+};
+
+// List orders from Prisma
+const listOrdersPrisma = async () => {
   return prisma.order.findMany({
     include: {
       user: true,
@@ -556,7 +622,31 @@ export const listOrders = async () => {
   });
 };
 
-export const getOrderById = async (orderId: number) => {
+export const listOrders = async () => {
+  if (USE_FIRESTORE) {
+    return listOrdersFirestore();
+  } else {
+    return listOrdersPrisma();
+  }
+};
+
+// Get order by ID from Firestore
+const getOrderByIdFirestore = async (orderId: number) => {
+  if (!db) {
+    throw new Error('Firestore database not initialized');
+  }
+
+  const orderDoc = await getCollection(COLLECTIONS.ORDERS).doc(String(orderId)).get();
+  
+  if (!orderDoc.exists) {
+    throw new Error('Order not found');
+  }
+
+  return fetchOrderWithDetails(orderDoc);
+};
+
+// Get order by ID from Prisma
+const getOrderByIdPrisma = async (orderId: number) => {
   return prisma.order.findUnique({
     where: { id: orderId },
     include: {
@@ -570,7 +660,43 @@ export const getOrderById = async (orderId: number) => {
   });
 };
 
-export const getAdminOverview = async () => {
+export const getOrderById = async (orderId: number) => {
+  if (USE_FIRESTORE) {
+    return getOrderByIdFirestore(orderId);
+  } else {
+    return getOrderByIdPrisma(orderId);
+  }
+};
+
+// Get admin overview from Firestore
+const getAdminOverviewFirestore = async () => {
+  if (!db) {
+    throw new Error('Firestore database not initialized');
+  }
+
+  const [usersSnapshot, ordersSnapshot] = await Promise.all([
+    getCollection(COLLECTIONS.USERS).get(),
+    getCollection(COLLECTIONS.ORDERS).get()
+  ]);
+
+  const totalUsers = usersSnapshot.size;
+  const totalOrders = ordersSnapshot.size;
+  
+  let totalRevenueCents = 0;
+  ordersSnapshot.docs.forEach((doc) => {
+    const data = doc.data();
+    totalRevenueCents += data.totalCents || 0;
+  });
+
+  return {
+    totalUsers,
+    totalOrders,
+    totalRevenueCents
+  };
+};
+
+// Get admin overview from Prisma
+const getAdminOverviewPrisma = async () => {
   const [totalUsers, totalOrders, revenueAggregate] = await Promise.all([
     prisma.user.count(),
     prisma.order.count(),
@@ -588,7 +714,52 @@ export const getAdminOverview = async () => {
   };
 };
 
-export const updateOrder = async (orderId: number, input: UpdateOrderInput) => {
+export const getAdminOverview = async () => {
+  if (USE_FIRESTORE) {
+    return getAdminOverviewFirestore();
+  } else {
+    return getAdminOverviewPrisma();
+  }
+};
+
+// Update order in Firestore
+const updateOrderFirestore = async (orderId: number, input: UpdateOrderInput) => {
+  if (!db) {
+    throw new Error('Firestore database not initialized');
+  }
+
+  const orderRef = getCollection(COLLECTIONS.ORDERS).doc(String(orderId));
+  const orderDoc = await orderRef.get();
+
+  if (!orderDoc.exists) {
+    throw new Error('Order not found');
+  }
+
+  const updateData: any = {
+    updatedAt: toTimestamp(new Date())
+  };
+
+  if (input.status !== undefined) {
+    updateData.status = input.status;
+  }
+  if (input.trackingId !== undefined) {
+    updateData.trackingId = input.trackingId;
+  }
+  if (input.courierCompany !== undefined) {
+    updateData.courierCompany = input.courierCompany;
+  }
+  if (input.trackingLink !== undefined) {
+    updateData.trackingLink = input.trackingLink || null;
+  }
+
+  await orderRef.update(updateData);
+
+  const updatedOrderDoc = await orderRef.get();
+  return fetchOrderWithDetails(updatedOrderDoc);
+};
+
+// Update order in Prisma
+const updateOrderPrisma = async (orderId: number, input: UpdateOrderInput) => {
   try {
     const order = await prisma.order.update({
       where: { id: orderId },
@@ -618,7 +789,42 @@ export const updateOrder = async (orderId: number, input: UpdateOrderInput) => {
   }
 };
 
-export const deleteOrder = async (orderId: number) => {
+export const updateOrder = async (orderId: number, input: UpdateOrderInput) => {
+  if (USE_FIRESTORE) {
+    return updateOrderFirestore(orderId, input);
+  } else {
+    return updateOrderPrisma(orderId, input);
+  }
+};
+
+// Delete order from Firestore
+const deleteOrderFirestore = async (orderId: number) => {
+  if (!db) {
+    throw new Error('Firestore database not initialized');
+  }
+
+  const orderRef = getCollection(COLLECTIONS.ORDERS).doc(String(orderId));
+  const orderDoc = await orderRef.get();
+
+  if (!orderDoc.exists) {
+    throw new Error('Order not found');
+  }
+
+  // Delete order items first
+  const orderItemsSnapshot = await getCollection(COLLECTIONS.ORDER_ITEMS)
+    .where('orderId', '==', String(orderId))
+    .get();
+
+  await Promise.all(
+    orderItemsSnapshot.docs.map((doc) => doc.ref.delete())
+  );
+
+  // Delete order
+  await orderRef.delete();
+};
+
+// Delete order from Prisma
+const deleteOrderPrisma = async (orderId: number) => {
   try {
     await prisma.order.delete({
       where: { id: orderId }
@@ -633,7 +839,34 @@ export const deleteOrder = async (orderId: number) => {
   }
 };
 
-export const getUserOrders = async (userId: number) => {
+export const deleteOrder = async (orderId: number) => {
+  if (USE_FIRESTORE) {
+    return deleteOrderFirestore(orderId);
+  } else {
+    return deleteOrderPrisma(orderId);
+  }
+};
+
+// Get user orders from Firestore
+const getUserOrdersFirestore = async (userId: number) => {
+  if (!db) {
+    throw new Error('Firestore database not initialized');
+  }
+
+  const ordersSnapshot = await getCollection(COLLECTIONS.ORDERS)
+    .where('userId', '==', String(userId))
+    .orderBy('createdAt', 'desc')
+    .get();
+
+  const orders = await Promise.all(
+    ordersSnapshot.docs.map((doc) => fetchOrderWithDetails(doc))
+  );
+
+  return orders;
+};
+
+// Get user orders from Prisma
+const getUserOrdersPrisma = async (userId: number) => {
   return prisma.order.findMany({
     where: { userId },
     include: {
@@ -648,4 +881,12 @@ export const getUserOrders = async (userId: number) => {
       createdAt: 'desc'
     }
   });
+};
+
+export const getUserOrders = async (userId: number) => {
+  if (USE_FIRESTORE) {
+    return getUserOrdersFirestore(userId);
+  } else {
+    return getUserOrdersPrisma(userId);
+  }
 };
