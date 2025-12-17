@@ -186,11 +186,13 @@ const createOrderFirestore = async (input: CreateOrderInput) => {
   }
 
   // Create order in Firestore
+  // Use numeric ID (timestamp-based) for compatibility with frontend
+  const numericOrderId = Date.now();
   const ordersRef = getCollection(COLLECTIONS.ORDERS);
-  const orderId = generateId();
-  const orderRef = ordersRef.doc(orderId);
+  const orderRef = ordersRef.doc(String(numericOrderId));
   
   const orderData = {
+    id: numericOrderId, // Store numeric ID in document for easy lookup
     userId,
     totalCents: orderTotalCents,
     status: 'PENDING',
@@ -215,7 +217,7 @@ const createOrderFirestore = async (input: CreateOrderInput) => {
 
     const orderItemId = generateId();
     const orderItemData = {
-      orderId,
+      orderId: String(numericOrderId), // Use numeric order ID
       productId,
       quantity: item.quantity,
       unitPriceCents: product.priceCents,
@@ -299,7 +301,7 @@ const createOrderFirestore = async (input: CreateOrderInput) => {
   const userData = userDoc.exists ? userDoc.data() : null;
   
   return {
-    id: parseInt(orderId) || orderId,
+    id: numericOrderId, // Return numeric ID for frontend compatibility
     ...createdOrderDoc.data(),
     user: userData ? {
       id: parseInt(userId) || userId,
@@ -543,15 +545,17 @@ export const createOrder = async (input: CreateOrderInput) => {
 // Helper to fetch order with user and items from Firestore
 const fetchOrderWithDetails = async (orderDoc: any) => {
   const orderData = orderDoc.data();
-  const orderId = orderDoc.id;
+  const orderDocId = orderDoc.id;
+  // Use numeric ID from document data if available, otherwise use document ID
+  const orderId = orderData.id || orderDocId;
 
   // Fetch user
   const userDoc = await getCollection(COLLECTIONS.USERS).doc(orderData.userId).get();
   const userData = userDoc.exists ? userDoc.data() : null;
 
-  // Fetch order items
+  // Fetch order items - search by both document ID and numeric ID for compatibility
   const orderItemsSnapshot = await getCollection(COLLECTIONS.ORDER_ITEMS)
-    .where('orderId', '==', orderId)
+    .where('orderId', '==', String(orderId))
     .get();
 
   const orderItems = await Promise.all(
@@ -578,7 +582,7 @@ const fetchOrderWithDetails = async (orderDoc: any) => {
   );
 
   return {
-    id: parseInt(orderId) || orderId,
+    id: typeof orderId === 'number' ? orderId : (parseInt(orderId) || orderId),
     ...orderData,
     user: userData ? {
       id: parseInt(orderData.userId) || orderData.userId,
@@ -636,10 +640,21 @@ const getOrderByIdFirestore = async (orderId: number) => {
     throw new Error('Firestore database not initialized');
   }
 
-  const orderDoc = await getCollection(COLLECTIONS.ORDERS).doc(String(orderId)).get();
+  // Try to find by document ID first (numeric ID)
+  let orderDoc = await getCollection(COLLECTIONS.ORDERS).doc(String(orderId)).get();
   
+  // If not found by document ID, try searching by the 'id' field in document data
   if (!orderDoc.exists) {
-    throw new Error('Order not found');
+    const querySnapshot = await getCollection(COLLECTIONS.ORDERS)
+      .where('id', '==', orderId)
+      .limit(1)
+      .get();
+    
+    if (!querySnapshot.empty) {
+      orderDoc = querySnapshot.docs[0];
+    } else {
+      throw new Error('Order not found');
+    }
   }
 
   return fetchOrderWithDetails(orderDoc);
@@ -728,11 +743,23 @@ const updateOrderFirestore = async (orderId: number, input: UpdateOrderInput) =>
     throw new Error('Firestore database not initialized');
   }
 
-  const orderRef = getCollection(COLLECTIONS.ORDERS).doc(String(orderId));
-  const orderDoc = await orderRef.get();
+  // Try to find by document ID first (numeric ID)
+  let orderRef = getCollection(COLLECTIONS.ORDERS).doc(String(orderId));
+  let orderDoc = await orderRef.get();
 
+  // If not found by document ID, try searching by the 'id' field in document data
   if (!orderDoc.exists) {
-    throw new Error('Order not found');
+    const querySnapshot = await getCollection(COLLECTIONS.ORDERS)
+      .where('id', '==', orderId)
+      .limit(1)
+      .get();
+    
+    if (!querySnapshot.empty) {
+      orderDoc = querySnapshot.docs[0];
+      orderRef = orderDoc.ref;
+    } else {
+      throw new Error('Order not found');
+    }
   }
 
   const updateData: any = {
@@ -803,11 +830,23 @@ const deleteOrderFirestore = async (orderId: number) => {
     throw new Error('Firestore database not initialized');
   }
 
-  const orderRef = getCollection(COLLECTIONS.ORDERS).doc(String(orderId));
-  const orderDoc = await orderRef.get();
+  // Try to find by document ID first (numeric ID)
+  let orderRef = getCollection(COLLECTIONS.ORDERS).doc(String(orderId));
+  let orderDoc = await orderRef.get();
 
+  // If not found by document ID, try searching by the 'id' field in document data
   if (!orderDoc.exists) {
-    throw new Error('Order not found');
+    const querySnapshot = await getCollection(COLLECTIONS.ORDERS)
+      .where('id', '==', orderId)
+      .limit(1)
+      .get();
+    
+    if (!querySnapshot.empty) {
+      orderDoc = querySnapshot.docs[0];
+      orderRef = orderDoc.ref;
+    } else {
+      throw new Error('Order not found');
+    }
   }
 
   // Delete order items first
