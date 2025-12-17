@@ -640,21 +640,50 @@ const getOrderByIdFirestore = async (orderId: number) => {
     throw new Error('Firestore database not initialized');
   }
 
-  // Try to find by document ID first (numeric ID)
+  console.log(`🔍 Looking up order with ID: ${orderId} (type: ${typeof orderId})`);
+
+  // Try to find by document ID first (numeric ID as string)
   let orderDoc = await getCollection(COLLECTIONS.ORDERS).doc(String(orderId)).get();
   
   // If not found by document ID, try searching by the 'id' field in document data
   if (!orderDoc.exists) {
+    console.log(`📋 Order not found by document ID, searching by 'id' field...`);
     const querySnapshot = await getCollection(COLLECTIONS.ORDERS)
       .where('id', '==', orderId)
       .limit(1)
       .get();
     
     if (!querySnapshot.empty) {
+      console.log(`✅ Found order by 'id' field`);
       orderDoc = querySnapshot.docs[0];
     } else {
-      throw new Error('Order not found');
+      // Last resort: search for orders where document ID starts with the numeric ID
+      // This handles old orders created with generateId() format
+      console.log(`📋 Order not found by 'id' field, searching by document ID prefix...`);
+      const allOrdersSnapshot = await getCollection(COLLECTIONS.ORDERS).get();
+      const matchingOrder = allOrdersSnapshot.docs.find(doc => {
+        const docId = doc.id;
+        // Check if document ID starts with the numeric ID
+        return docId.startsWith(String(orderId));
+      });
+      
+      if (matchingOrder) {
+        console.log(`✅ Found order by document ID prefix: ${matchingOrder.id}`);
+        orderDoc = matchingOrder;
+        
+        // Update the order document to include the numeric ID field for future lookups
+        const orderData = orderDoc.data();
+        if (!orderData.id) {
+          await matchingOrder.ref.update({ id: orderId });
+          console.log(`✅ Updated order document with numeric ID field`);
+        }
+      } else {
+        console.error(`❌ Order not found with ID: ${orderId}`);
+        throw new Error('Order not found');
+      }
     }
+  } else {
+    console.log(`✅ Found order by document ID`);
   }
 
   return fetchOrderWithDetails(orderDoc);
@@ -743,23 +772,53 @@ const updateOrderFirestore = async (orderId: number, input: UpdateOrderInput) =>
     throw new Error('Firestore database not initialized');
   }
 
-  // Try to find by document ID first (numeric ID)
+  console.log(`🔍 Looking up order with ID: ${orderId} (type: ${typeof orderId})`);
+
+  // Try to find by document ID first (numeric ID as string)
   let orderRef = getCollection(COLLECTIONS.ORDERS).doc(String(orderId));
   let orderDoc = await orderRef.get();
 
   // If not found by document ID, try searching by the 'id' field in document data
   if (!orderDoc.exists) {
+    console.log(`📋 Order not found by document ID, searching by 'id' field...`);
     const querySnapshot = await getCollection(COLLECTIONS.ORDERS)
       .where('id', '==', orderId)
       .limit(1)
       .get();
     
     if (!querySnapshot.empty) {
+      console.log(`✅ Found order by 'id' field`);
       orderDoc = querySnapshot.docs[0];
       orderRef = orderDoc.ref;
     } else {
-      throw new Error('Order not found');
+      // Last resort: search for orders where document ID starts with the numeric ID
+      // This handles old orders created with generateId() format
+      console.log(`📋 Order not found by 'id' field, searching by document ID prefix...`);
+      const allOrdersSnapshot = await getCollection(COLLECTIONS.ORDERS).get();
+      const matchingOrder = allOrdersSnapshot.docs.find(doc => {
+        const docId = doc.id;
+        // Check if document ID starts with the numeric ID
+        return docId.startsWith(String(orderId));
+      });
+      
+      if (matchingOrder) {
+        console.log(`✅ Found order by document ID prefix: ${matchingOrder.id}`);
+        orderDoc = matchingOrder;
+        orderRef = matchingOrder.ref;
+        
+        // Update the order document to include the numeric ID field for future lookups
+        const orderData = orderDoc.data();
+        if (!orderData.id) {
+          await orderRef.update({ id: orderId });
+          console.log(`✅ Updated order document with numeric ID field`);
+        }
+      } else {
+        console.error(`❌ Order not found with ID: ${orderId}`);
+        throw new Error('Order not found');
+      }
     }
+  } else {
+    console.log(`✅ Found order by document ID`);
   }
 
   const updateData: any = {
