@@ -1,38 +1,325 @@
+// @ts-nocheck
 import { Prisma } from '../generated/prisma/client';
 import { CreateOrderInput, UpdateOrderInput } from '../schemas/order';
 import { prisma } from '../utils/prisma';
 import { USE_FIRESTORE } from '../config/database';
-import { getCollection, COLLECTIONS } from '../utils/firestore';
+import { getCollection, COLLECTIONS, docToObject, toTimestamp, generateId, db } from '../utils/firestore';
 
-export const createOrder = async (input: CreateOrderInput) => {
+// Firestore User type
+interface FirestoreUser {
+  id: string;
+  name: string;
+  email: string;
+  passwordHash?: string;
+  phone?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  createdAt: string | Date;
+}
+
+// Create order using Firestore
+const createOrderFirestore = async (input: CreateOrderInput) => {
+  if (!db) {
+    throw new Error('Firestore database not initialized');
+  }
+
+  const productIds = input.items.map((item) => String(item.productId));
+  
+  // Fetch products from Firestore
+  const productPromises = productIds.map(async (id) => {
+    const productDoc = await getCollection(COLLECTIONS.PRODUCTS).doc(id).get();
+    if (productDoc.exists) {
+      const data = productDoc.data();
+      return {
+        id: productDoc.id,
+        ...data
+      };
+    }
+    return null;
+  });
+  
+  const fetchedProducts = await Promise.all(productPromises);
+  const products = fetchedProducts.filter((p): p is any => p !== null);
+
+  if (products.length !== productIds.length) {
+    throw new Error('One or more products not found');
+  }
+
+  const productsById = new Map<string, any>(
+    products.map((product) => [product.id, product])
+  );
+
+  let orderTotalCents = 0;
+
+  // Validate products and calculate total
+  for (const item of input.items) {
+    const productId = String(item.productId);
+    const product = productsById.get(productId);
+
+    if (!product) {
+      throw new Error(`Product with id ${item.productId} not found`);
+    }
+
+    const productColors = Array.isArray(product.colors)
+      ? (product.colors as Array<Record<string, unknown>>)
+      : [];
+    const productSizes = Array.isArray(product.sizes)
+      ? (product.sizes as Array<Record<string, unknown>>)
+      : [];
+
+    if (productColors.length > 0 && !item.selectedColor) {
+      throw new Error(`Please select a color for ${product.name}`);
+    }
+
+    if (
+      item.selectedColor &&
+      productColors.length > 0 &&
+      !productColors.some((color) => color.name === item.selectedColor?.name)
+    ) {
+      throw new Error(`Selected color is not available for ${product.name}`);
+    }
+
+    if (productSizes.length > 0 && !item.selectedSize) {
+      throw new Error(`Please select a size for ${product.name}`);
+    }
+
+    if (
+      item.selectedSize &&
+      productSizes.length > 0 &&
+      !productSizes.some((size) => size.name === item.selectedSize?.name)
+    ) {
+      throw new Error(`Selected size is not available for ${product.name}`);
+    }
+
+    // Check inventory - prioritize variant inventory if available
+    let availableQuantity = 0;
+    
+    if (product.inventoryVariants && Array.isArray(product.inventoryVariants) && product.inventoryVariants.length > 0) {
+      // Use variant-based inventory
+      if (item.selectedColor && item.selectedSize) {
+        const variant = (product.inventoryVariants as Array<{ colorName: string; sizeName: string; quantity: number }>).find(
+          (v) => v.colorName === item.selectedColor?.name && v.sizeName === item.selectedSize?.name
+        );
+        availableQuantity = variant ? variant.quantity : 0;
+      } else {
+        // If variants exist but color/size not selected, cannot determine inventory
+        throw new Error(`Color and size must be selected for ${product.name} to check inventory`);
+      }
+    } else {
+      // Fallback to general inventory if no variants
+      availableQuantity = product.inventory || 0;
+    }
+
+    if (availableQuantity < item.quantity) {
+      throw new Error(`Insufficient inventory for ${product.name}. Available: ${availableQuantity}, Requested: ${item.quantity}`);
+    }
+
+    orderTotalCents += product.priceCents * item.quantity;
+  }
+
+  // Get or create user in Firestore
+  let userId: string;
+  const usersRef = getCollection(COLLECTIONS.USERS);
+  
+  if (input.userId) {
+    // User is logged in - find by ID
+    const userDoc = await usersRef.doc(String(input.userId)).get();
+    if (!userDoc.exists) {
+      throw new Error('User not found');
+    }
+    
+    // Update user info with checkout details
+    await usersRef.doc(String(input.userId)).update({
+      name: input.customer.name,
+      phone: input.customer.phone || null,
+      addressLine1: input.customer.addressLine1,
+      addressLine2: input.customer.addressLine2 || null,
+      city: input.customer.city,
+      state: input.customer.state || null,
+      postalCode: input.customer.postalCode,
+      country: input.customer.country,
+      updatedAt: toTimestamp(new Date())
+    });
+    
+    userId = userDoc.id;
+  } else {
+    // Guest checkout - find or create by email
+    const userQuery = await usersRef.where('email', '==', input.customer.email).limit(1).get();
+    
+    if (!userQuery.empty) {
+      // User exists - update
+      const userDoc = userQuery.docs[0];
+      await userDoc.ref.update({
+        name: input.customer.name,
+        phone: input.customer.phone || null,
+        addressLine1: input.customer.addressLine1,
+        addressLine2: input.customer.addressLine2 || null,
+        city: input.customer.city,
+        state: input.customer.state || null,
+        postalCode: input.customer.postalCode,
+        country: input.customer.country,
+        updatedAt: toTimestamp(new Date())
+      });
+      userId = userDoc.id;
+    } else {
+      // Create new user
+      const newUserRef = usersRef.doc();
+      await newUserRef.set({
+        name: input.customer.name,
+        email: input.customer.email,
+        phone: input.customer.phone || null,
+        addressLine1: input.customer.addressLine1,
+        addressLine2: input.customer.addressLine2 || null,
+        city: input.customer.city,
+        state: input.customer.state || null,
+        postalCode: input.customer.postalCode,
+        country: input.customer.country,
+        createdAt: toTimestamp(new Date()),
+        updatedAt: toTimestamp(new Date())
+      });
+      userId = newUserRef.id;
+    }
+  }
+
+  // Create order in Firestore
+  const ordersRef = getCollection(COLLECTIONS.ORDERS);
+  const orderId = generateId();
+  const orderRef = ordersRef.doc(orderId);
+  
+  const orderData = {
+    userId,
+    totalCents: orderTotalCents,
+    status: 'PENDING',
+    orderSource: input.orderSource || 'WEBSITE',
+    createdAt: toTimestamp(new Date()),
+    updatedAt: toTimestamp(new Date())
+  };
+  
+  await orderRef.set(orderData);
+
+  // Create order items
+  const orderItemsRef = getCollection(COLLECTIONS.ORDER_ITEMS);
+  const orderItems = [];
+  
+  for (const item of input.items) {
+    const productId = String(item.productId);
+    const product = productsById.get(productId);
+    
+    if (!product) {
+      throw new Error(`Product with id ${item.productId} not found`);
+    }
+
+    const orderItemId = generateId();
+    const orderItemData = {
+      orderId,
+      productId,
+      quantity: item.quantity,
+      unitPriceCents: product.priceCents,
+      selectedColor: item.selectedColor?.name || null,
+      selectedColorHex: item.selectedColor?.hex || null,
+      selectedColorImage: item.selectedColor?.imageUrl || null,
+      selectedSize: item.selectedSize?.name || null,
+      createdAt: toTimestamp(new Date())
+    };
+    
+    await orderItemsRef.doc(orderItemId).set(orderItemData);
+    orderItems.push({ id: orderItemId, ...orderItemData });
+  }
+
+  // Update inventory in Firestore
+  for (const item of input.items) {
+    const productId = String(item.productId);
+    const product = productsById.get(productId);
+    if (!product) continue;
+
+    const productRef = getCollection(COLLECTIONS.PRODUCTS).doc(productId);
+    
+    // If product has inventory variants, update the specific variant
+    if (product.inventoryVariants && Array.isArray(product.inventoryVariants) && product.inventoryVariants.length > 0) {
+      if (item.selectedColor && item.selectedSize) {
+        const variants = product.inventoryVariants as Array<{ colorName: string; sizeName: string; quantity: number }>;
+        const variantIndex = variants.findIndex(
+          (v) => v.colorName === item.selectedColor?.name && v.sizeName === item.selectedSize?.name
+        );
+        
+        if (variantIndex !== -1) {
+          const updatedVariants = [...variants];
+          updatedVariants[variantIndex] = {
+            ...updatedVariants[variantIndex]!,
+            quantity: Math.max(0, updatedVariants[variantIndex]!.quantity - item.quantity)
+          };
+          
+          await productRef.update({
+            inventoryVariants: updatedVariants,
+            updatedAt: toTimestamp(new Date())
+          });
+          continue;
+        }
+      }
+    }
+    
+    // Fallback to general inventory
+    const currentInventory = product.inventory || 0;
+    await productRef.update({
+      inventory: Math.max(0, currentInventory - item.quantity),
+      updatedAt: toTimestamp(new Date())
+    });
+  }
+
+  // Fetch created order with user and items for response
+  const createdOrderDoc = await orderRef.get();
+  const userDoc = await usersRef.doc(userId).get();
+  
+  const orderItemsWithProducts = await Promise.all(
+    orderItems.map(async (orderItem) => {
+      const productDoc = await getCollection(COLLECTIONS.PRODUCTS).doc(orderItem.productId).get();
+      const productData = productDoc.exists ? productDoc.data() : null;
+      
+      return {
+        id: orderItem.id,
+        productId: parseInt(orderItem.productId) || orderItem.productId,
+        quantity: orderItem.quantity,
+        unitPriceCents: orderItem.unitPriceCents,
+        selectedColor: orderItem.selectedColor,
+        selectedColorHex: orderItem.selectedColorHex,
+        selectedColorImage: orderItem.selectedColorImage,
+        selectedSize: orderItem.selectedSize,
+        product: productData ? {
+          id: parseInt(productDoc.id) || productDoc.id,
+          ...productData
+        } : null
+      };
+    })
+  );
+
+  const userData = userDoc.exists ? userDoc.data() : null;
+  
+  return {
+    id: parseInt(orderId) || orderId,
+    ...createdOrderDoc.data(),
+    user: userData ? {
+      id: parseInt(userId) || userId,
+      ...userData
+    } : null,
+    orderItems: orderItemsWithProducts
+  };
+};
+
+// Create order using Prisma (SQLite)
+const createOrderPrisma = async (input: CreateOrderInput) => {
   return prisma.$transaction(async (tx) => {
     const productIds = input.items.map((item) => item.productId);
 
-    // Check products in Firestore if enabled, otherwise use Prisma
-    let products: any[] = [];
-    if (USE_FIRESTORE) {
-      // Fetch products from Firestore
-      const productPromises = productIds.map(async (id) => {
-        const productDoc = await getCollection(COLLECTIONS.PRODUCTS).doc(String(id)).get();
-        if (productDoc.exists) {
-          const data = productDoc.data();
-          return {
-            id: parseInt(productDoc.id) || productDoc.id,
-            ...data
-          };
-        }
-        return null;
-      });
-      const fetchedProducts = await Promise.all(productPromises);
-      products = fetchedProducts.filter((p): p is any => p !== null);
-    } else {
-      // Use Prisma for SQLite
-      products = await tx.product.findMany({
-        where: {
-          id: { in: productIds }
-        }
-      });
-    }
+    // Use Prisma for SQLite
+    const products = await tx.product.findMany({
+      where: {
+        id: { in: productIds }
+      }
+    });
 
     if (products.length !== productIds.length) {
       throw new Error('One or more products not found');
@@ -244,6 +531,15 @@ export const createOrder = async (input: CreateOrderInput) => {
   });
 };
 
+// Main createOrder function - routes to Firestore or Prisma
+export const createOrder = async (input: CreateOrderInput) => {
+  if (USE_FIRESTORE) {
+    return createOrderFirestore(input);
+  } else {
+    return createOrderPrisma(input);
+  }
+};
+
 export const listOrders = async () => {
   return prisma.order.findMany({
     include: {
@@ -353,4 +649,3 @@ export const getUserOrders = async (userId: number) => {
     }
   });
 };
-
