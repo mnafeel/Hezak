@@ -1,16 +1,38 @@
 import { Prisma } from '../generated/prisma/client';
 import { CreateOrderInput, UpdateOrderInput } from '../schemas/order';
 import { prisma } from '../utils/prisma';
+import { USE_FIRESTORE } from '../config/database';
+import { getCollection, COLLECTIONS } from '../utils/firestore';
 
 export const createOrder = async (input: CreateOrderInput) => {
   return prisma.$transaction(async (tx) => {
     const productIds = input.items.map((item) => item.productId);
 
-    const products = await tx.product.findMany({
-      where: {
-        id: { in: productIds }
-      }
-    });
+    // Check products in Firestore if enabled, otherwise use Prisma
+    let products: any[] = [];
+    if (USE_FIRESTORE) {
+      // Fetch products from Firestore
+      const productPromises = productIds.map(async (id) => {
+        const productDoc = await getCollection(COLLECTIONS.PRODUCTS).doc(String(id)).get();
+        if (productDoc.exists) {
+          const data = productDoc.data();
+          return {
+            id: parseInt(productDoc.id) || productDoc.id,
+            ...data
+          };
+        }
+        return null;
+      });
+      const fetchedProducts = await Promise.all(productPromises);
+      products = fetchedProducts.filter((p): p is any => p !== null);
+    } else {
+      // Use Prisma for SQLite
+      products = await tx.product.findMany({
+        where: {
+          id: { in: productIds }
+        }
+      });
+    }
 
     if (products.length !== productIds.length) {
       throw new Error('One or more products not found');
