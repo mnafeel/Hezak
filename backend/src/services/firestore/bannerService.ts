@@ -138,16 +138,36 @@ export const getBannerByIdFirestore = async (id: number) => {
 };
 
 export const createBannerFirestore = async (data: BannerInput) => {
-  // Get the highest order value
-  const bannersSnapshot = await getCollection(COLLECTIONS.BANNERS)
-    .orderBy('order', 'desc')
-    .limit(1)
-    .get();
-
+  // Get the highest order value - handle missing index gracefully
   let nextOrder = 0;
-  if (!bannersSnapshot.empty) {
-    const maxBanner = bannersSnapshot.docs[0].data();
-    nextOrder = (maxBanner.order ?? -1) + 1;
+  try {
+    try {
+      const bannersSnapshot = await getCollection(COLLECTIONS.BANNERS)
+        .orderBy('order', 'desc')
+        .limit(1)
+        .get();
+
+      if (!bannersSnapshot.empty) {
+        const maxBanner = bannersSnapshot.docs[0].data();
+        nextOrder = (maxBanner.order ?? -1) + 1;
+      }
+    } catch (error: any) {
+      // If index doesn't exist, fetch all and find max in memory
+      if (error?.code === 9 || error?.message?.includes('index')) {
+        console.log('⚠️ Firestore index not found for order, fetching all banners to find max order');
+        const allBannersSnapshot = await getCollection(COLLECTIONS.BANNERS).get();
+        if (!allBannersSnapshot.empty) {
+          const allBanners = snapshotToArray<FirestoreBanner>(allBannersSnapshot);
+          const maxOrder = Math.max(...allBanners.map(b => b.order ?? 0), -1);
+          nextOrder = maxOrder + 1;
+        }
+      } else {
+        throw error;
+      }
+    }
+  } catch (error) {
+    console.warn('Error getting max order, using 0:', error);
+    nextOrder = 0;
   }
 
   const bannerId = Date.now().toString();
@@ -170,11 +190,26 @@ export const createBannerFirestore = async (data: BannerInput) => {
     updatedAt: toTimestamp(new Date())
   };
 
+  console.log('📝 Creating banner in Firestore:', { bannerId, bannerData });
+
   await getCollection(COLLECTIONS.BANNERS).doc(bannerId).set(bannerData);
 
-  const createdBanner = await getCollection(COLLECTIONS.BANNERS).doc(bannerId).get();
-  const banner = docToObject<FirestoreBanner>(createdBanner);
-  return banner ? toBanner(banner) : null;
+  // Fetch the created banner to return it
+  const createdBannerDoc = await getCollection(COLLECTIONS.BANNERS).doc(bannerId).get();
+  
+  if (!createdBannerDoc.exists) {
+    console.error('❌ Banner was not created in Firestore');
+    throw new Error('Failed to create banner');
+  }
+
+  const banner = docToObject<FirestoreBanner>(createdBannerDoc);
+  if (!banner) {
+    console.error('❌ Failed to parse created banner');
+    throw new Error('Failed to parse created banner');
+  }
+
+  console.log('✅ Banner created successfully:', banner.id);
+  return toBanner(banner);
 };
 
 export const updateBannerFirestore = async (id: number, data: Partial<BannerInput>) => {
