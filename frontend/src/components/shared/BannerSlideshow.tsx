@@ -118,15 +118,8 @@ const BannerSlideshow = () => {
     setCurrentIndex((prev) => (prev + 1) % banners.length);
   };
 
-  const currentBanner = banners[currentIndex];
-  const textPosition = currentBanner.textPosition || 'bottom-left';
-  const textAlign = currentBanner.textAlign || 'left';
-  const animationStyle = currentBanner.animationStyle || 'fade';
-  const overlayStyle = currentBanner.overlayStyle || 'gradient';
-  const mobileAspectRatio = currentBanner.mobileAspectRatio || '4/3';
-
   return (
-    <div className={`relative w-full ${getAspectRatioClasses(mobileAspectRatio)} rounded-3xl overflow-hidden`}>
+    <div className={`relative w-full ${getAspectRatioClasses()} rounded-3xl overflow-hidden`}>
       <AnimatePresence mode="wait">
         <motion.div
           key={currentBanner.id}
