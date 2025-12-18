@@ -10,6 +10,7 @@ import { useThemeColors } from '../hooks/useThemeColors';
 import { formatCurrency, cn } from '../lib/utils';
 import CartSidebar from '../components/shared/CartSidebar';
 import FavoritesSidebar from '../components/shared/FavoritesSidebar';
+import CategorySidebarMobile from '../components/shared/CategorySidebarMobile';
 
 const StoreLayout = () => {
   const navigate = useNavigate();
