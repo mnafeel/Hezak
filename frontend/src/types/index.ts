@@ -117,9 +117,9 @@ export interface BannerTextElement {
   id: string;
   type: 'text';
   content: string;
-  x: number; // Percentage position (0-100)
-  y: number; // Percentage position (0-100)
-  fontSize: number;
+  x: number; // Percentage position (0-100) - Desktop
+  y: number; // Percentage position (0-100) - Desktop
+  fontSize: number; // Desktop font size
   fontFamily: string;
   fontWeight: 'normal' | 'bold' | 'lighter' | 'bolder' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
   color: string;
@@ -130,6 +130,10 @@ export interface BannerTextElement {
   animation?: 'fade' | 'slide' | 'zoom' | 'bounce' | 'pulse' | 'none';
   animationDelay?: number; // in seconds
   animationDuration?: number; // in seconds
+  // Mobile-specific properties
+  mobileX?: number; // Percentage position (0-100) - Mobile
+  mobileY?: number; // Percentage position (0-100) - Mobile
+  mobileFontSize?: number; // Mobile font size
 }
 
 export interface BannerImageElement {
@@ -138,13 +142,18 @@ export interface BannerImageElement {
   imageUrl: string;
   productId?: number | null; // Link to product
   productUrl?: string | null; // Direct product URL
-  x: number; // percentage from left
-  y: number; // percentage from top
-  width: number; // percentage width (0-100)
-  height?: number; // percentage height (optional, maintains aspect ratio if not set)
+  x: number; // percentage from left - Desktop
+  y: number; // percentage from top - Desktop
+  width: number; // percentage width (0-100) - Desktop
+  height?: number; // percentage height (optional, maintains aspect ratio if not set) - Desktop
   animation?: 'fade' | 'slide' | 'zoom' | 'bounce' | 'pulse' | 'none';
   animationDelay?: number; // in seconds
   animationDuration?: number; // in seconds
+  // Mobile-specific properties
+  mobileX?: number; // percentage from left - Mobile
+  mobileY?: number; // percentage from top - Mobile
+  mobileWidth?: number; // percentage width (0-100) - Mobile
+  mobileHeight?: number; // percentage height - Mobile
 }
 
 export type BannerElement = BannerTextElement | BannerImageElement;

@@ -159,13 +159,21 @@ const BannerEditor = ({
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
     
+    // Use mobile properties if in mobile preview mode, otherwise use desktop
+    const currentX = previewMode === 'mobile' && (element.mobileX !== undefined || (element.type === 'image' && element.mobileX !== undefined)) 
+      ? (element.type === 'image' ? element.mobileX : element.mobileX) || element.x
+      : element.x;
+    const currentY = previewMode === 'mobile' && (element.mobileY !== undefined || (element.type === 'image' && element.mobileY !== undefined))
+      ? (element.type === 'image' ? element.mobileY : element.mobileY) || element.y
+      : element.y;
+    
     // Calculate the element's current position in pixels
     // For image elements, use width to calculate center offset
     const elementWidthPixels = element.type === 'image' 
-      ? (element.width / 100) * rect.width 
+      ? ((previewMode === 'mobile' && element.mobileWidth !== undefined ? element.mobileWidth : element.width) / 100) * rect.width 
       : 0;
-    const elementXPixels = (element.x / 100) * rect.width;
-    const elementYPixels = (element.y / 100) * rect.height;
+    const elementXPixels = (currentX / 100) * rect.width;
+    const elementYPixels = (currentY / 100) * rect.height;
     
     // Calculate offset from element center to mouse click position
     setDragOffset({
@@ -188,12 +196,22 @@ const BannerEditor = ({
         const newXPercent = Math.max(0, Math.min(100, ((mouseX - dragOffset.x) / rect.width) * 100));
         const newYPercent = Math.max(0, Math.min(100, ((mouseY - dragOffset.y) / rect.height) * 100));
         
-        // Update only the dragging element
-        const updatedElements = textElements.map(el => 
-          el.id === isDragging 
-            ? { ...el, x: newXPercent, y: newYPercent } 
-            : el
-        );
+        // Update only the dragging element - use mobile properties if in mobile preview mode
+        const updatedElements = textElements.map(el => {
+          if (el.id !== isDragging) return el;
+          
+          if (previewMode === 'mobile') {
+            // Update mobile properties
+            if (el.type === 'image') {
+              return { ...el, mobileX: newXPercent, mobileY: newYPercent };
+            } else {
+              return { ...el, mobileX: newXPercent, mobileY: newYPercent };
+            }
+          } else {
+            // Update desktop properties
+            return { ...el, x: newXPercent, y: newYPercent };
+          }
+        });
         onTextElementsChange(updatedElements);
       };
 
@@ -212,7 +230,7 @@ const BannerEditor = ({
         document.removeEventListener('mouseleave', handleGlobalMouseUp);
       };
     }
-  }, [isDragging, dragOffset, textElements, onTextElementsChange]);
+  }, [isDragging, dragOffset, textElements, onTextElementsChange, previewMode]);
 
   const fontFamilies = [
     'Inter', 'Arial', 'Helvetica', 'Times New Roman', 'Georgia', 
@@ -691,23 +709,23 @@ const BannerEditor = ({
                           selectedElementId === element.id && "ring-2 ring-brand-400 ring-offset-2 rounded-lg z-20",
                           isDragging === element.id && "z-30"
                         )}
-                        style={{
-                          left: `${element.x}%`,
-                          top: `${element.y}%`,
-                          fontFamily: element.fontFamily,
-                          fontSize: `${Math.max(12, element.fontSize * 0.7)}px`, // Scale down for mobile
-                          fontWeight: element.fontWeight,
-                          color: element.color || '#FFFFFF',
-                          textAlign: element.textAlign,
-                          textShadow: element.textShadow || '2px 2px 8px rgba(0,0,0,0.8)',
-                          letterSpacing: `${element.letterSpacing || 0}px`,
-                          lineHeight: element.lineHeight || 1.2,
-                          maxWidth: '80%',
-                          padding: selectedElementId === element.id ? '8px' : '4px',
-                          pointerEvents: 'auto',
-                          userSelect: 'none',
-                          WebkitUserSelect: 'none',
-                        }}
+                      style={{
+                        left: `${element.mobileX !== undefined ? element.mobileX : element.x}%`,
+                        top: `${element.mobileY !== undefined ? element.mobileY : element.y}%`,
+                        fontFamily: element.fontFamily,
+                        fontSize: `${element.mobileFontSize !== undefined ? element.mobileFontSize : Math.max(12, element.fontSize * 0.7)}px`,
+                        fontWeight: element.fontWeight,
+                        color: element.color || '#FFFFFF',
+                        textAlign: element.textAlign,
+                        textShadow: element.textShadow || '2px 2px 8px rgba(0,0,0,0.8)',
+                        letterSpacing: `${element.letterSpacing || 0}px`,
+                        lineHeight: element.lineHeight || 1.2,
+                        maxWidth: '80%',
+                        padding: selectedElementId === element.id ? '8px' : '4px',
+                        pointerEvents: 'auto',
+                        userSelect: 'none',
+                        WebkitUserSelect: 'none',
+                      }}
                         onMouseDown={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -735,10 +753,14 @@ const BannerEditor = ({
                           isDragging === element.id && "z-30"
                         )}
                         style={{
-                          left: `${element.x}%`,
-                          top: `${element.y}%`,
-                          width: `${element.width}%`,
-                          height: element.height ? `${element.height}%` : 'auto',
+                          left: `${element.mobileX !== undefined ? element.mobileX : element.x}%`,
+                          top: `${element.mobileY !== undefined ? element.mobileY : element.y}%`,
+                          width: `${element.mobileWidth !== undefined ? element.mobileWidth : element.width}%`,
+                          height: element.mobileHeight !== undefined 
+                            ? `${element.mobileHeight}%` 
+                            : element.height 
+                            ? `${element.height}%` 
+                            : 'auto',
                           padding: selectedElementId === element.id ? '4px' : '2px',
                           pointerEvents: 'auto',
                           userSelect: 'none',
@@ -900,67 +922,190 @@ const BannerEditor = ({
                   />
                 </div>
 
-                {/* Position */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-semibold text-white mb-2">
-                      X Position (%)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.1"
-                      value={selectedElement.x}
-                      onChange={(e) => handleUpdateElement(selectedElement.id, { x: parseFloat(e.target.value) || 0 })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/60"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-white mb-2">
-                      Y Position (%)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.1"
-                      value={selectedElement.y}
-                      onChange={(e) => handleUpdateElement(selectedElement.id, { y: parseFloat(e.target.value) || 0 })}
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/60"
-                    />
+                {/* Desktop Position */}
+                <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-3 mb-3">
+                  <label className="block text-sm font-semibold text-blue-200 mb-3">
+                    💻 Desktop Position
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-blue-300 mb-1">
+                        X Position (%)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={selectedElement.x}
+                        onChange={(e) => handleUpdateElement(selectedElement.id, { x: parseFloat(e.target.value) || 0 })}
+                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-blue-300 mb-1">
+                        Y Position (%)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={selectedElement.y}
+                        onChange={(e) => handleUpdateElement(selectedElement.id, { y: parseFloat(e.target.value) || 0 })}
+                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+                      />
+                    </div>
                   </div>
                 </div>
 
-                {/* Size */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-semibold text-white mb-2">
-                      Width (%): {selectedElement.width}%
-                    </label>
-                    <input
-                      type="range"
-                      min="5"
-                      max="100"
-                      value={selectedElement.width}
-                      onChange={(e) => handleUpdateElement(selectedElement.id, { width: parseInt(e.target.value) })}
-                      className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
-                    />
+                {/* Mobile Position */}
+                <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-3 mb-3">
+                  <label className="block text-sm font-semibold text-purple-200 mb-3">
+                    📱 Mobile Position (Optional - uses desktop if not set)
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-purple-300 mb-1">
+                        X Position (%)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={selectedElement.mobileX !== undefined ? selectedElement.mobileX : selectedElement.x}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          if (isNaN(value)) return;
+                          handleUpdateElement(selectedElement.id, { mobileX: value });
+                        }}
+                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateElement(selectedElement.id, { mobileX: undefined })}
+                        className="mt-1 text-xs text-purple-300 hover:text-purple-200"
+                      >
+                        Reset to Desktop
+                      </button>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-purple-300 mb-1">
+                        Y Position (%)
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.1"
+                        value={selectedElement.mobileY !== undefined ? selectedElement.mobileY : selectedElement.y}
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value);
+                          if (isNaN(value)) return;
+                          handleUpdateElement(selectedElement.id, { mobileY: value });
+                        }}
+                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateElement(selectedElement.id, { mobileY: undefined })}
+                        className="mt-1 text-xs text-purple-300 hover:text-purple-200"
+                      >
+                        Reset to Desktop
+                      </button>
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-white mb-2">
-                      Height (%)
-                    </label>
-                    <input
-                      type="number"
-                      min="5"
-                      max="100"
-                      step="0.1"
-                      value={selectedElement.height || ''}
-                      onChange={(e) => handleUpdateElement(selectedElement.id, { height: e.target.value ? parseFloat(e.target.value) : undefined })}
-                      placeholder="Auto"
-                      className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/60"
-                    />
+                </div>
+
+                {/* Desktop Size */}
+                <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-3 mb-3">
+                  <label className="block text-sm font-semibold text-blue-200 mb-3">
+                    💻 Desktop Size
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-blue-300 mb-1">
+                        Width (%): {selectedElement.width}%
+                      </label>
+                      <input
+                        type="range"
+                        min="5"
+                        max="100"
+                        value={selectedElement.width}
+                        onChange={(e) => handleUpdateElement(selectedElement.id, { width: parseInt(e.target.value) })}
+                        className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-blue-300 mb-1">
+                        Height (%)
+                      </label>
+                      <input
+                        type="number"
+                        min="5"
+                        max="100"
+                        step="0.1"
+                        value={selectedElement.height || ''}
+                        onChange={(e) => handleUpdateElement(selectedElement.id, { height: e.target.value ? parseFloat(e.target.value) : undefined })}
+                        placeholder="Auto"
+                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mobile Size */}
+                <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-3 mb-3">
+                  <label className="block text-sm font-semibold text-purple-200 mb-3">
+                    📱 Mobile Size (Optional - uses desktop if not set)
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-purple-300 mb-1">
+                        Width (%): {selectedElement.mobileWidth !== undefined ? selectedElement.mobileWidth : selectedElement.width}%
+                      </label>
+                      <input
+                        type="range"
+                        min="5"
+                        max="100"
+                        value={selectedElement.mobileWidth !== undefined ? selectedElement.mobileWidth : selectedElement.width}
+                        onChange={(e) => handleUpdateElement(selectedElement.id, { mobileWidth: parseInt(e.target.value) })}
+                        className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateElement(selectedElement.id, { mobileWidth: undefined })}
+                        className="mt-1 text-xs text-purple-300 hover:text-purple-200"
+                      >
+                        Reset to Desktop
+                      </button>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-purple-300 mb-1">
+                        Height (%)
+                      </label>
+                      <input
+                        type="number"
+                        min="5"
+                        max="100"
+                        step="0.1"
+                        value={selectedElement.mobileHeight !== undefined ? selectedElement.mobileHeight : (selectedElement.height || '')}
+                        onChange={(e) => {
+                          const value = e.target.value ? parseFloat(e.target.value) : undefined;
+                          handleUpdateElement(selectedElement.id, { mobileHeight: value });
+                        }}
+                        placeholder="Auto"
+                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateElement(selectedElement.id, { mobileHeight: undefined })}
+                        className="mt-1 text-xs text-purple-300 hover:text-purple-200"
+                      >
+                        Reset to Desktop
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -1071,51 +1216,147 @@ const BannerEditor = ({
                   />
                 </div>
 
-            {/* Position */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-semibold text-white mb-2">
-                  X Position (%)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={selectedElement.x}
-                  onChange={(e) => handleUpdateElement(selectedElement.id, { x: parseFloat(e.target.value) || 0 })}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/60"
-                />
+            {/* Desktop Position */}
+            <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-3 mb-3">
+              <label className="block text-sm font-semibold text-blue-200 mb-3">
+                💻 Desktop Position
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-blue-300 mb-1">
+                    X Position (%)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={selectedElement.x}
+                    onChange={(e) => handleUpdateElement(selectedElement.id, { x: parseFloat(e.target.value) || 0 })}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-blue-300 mb-1">
+                    Y Position (%)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={selectedElement.y}
+                    onChange={(e) => handleUpdateElement(selectedElement.id, { y: parseFloat(e.target.value) || 0 })}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/60"
+                  />
+                </div>
               </div>
+            </div>
+
+            {/* Mobile Position */}
+            <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-3 mb-3">
+              <label className="block text-sm font-semibold text-purple-200 mb-3">
+                📱 Mobile Position (Optional - uses desktop if not set)
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-purple-300 mb-1">
+                    X Position (%)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={selectedElement.mobileX !== undefined ? selectedElement.mobileX : selectedElement.x}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value);
+                      if (isNaN(value)) return;
+                      handleUpdateElement(selectedElement.id, { mobileX: value });
+                    }}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateElement(selectedElement.id, { mobileX: undefined })}
+                    className="mt-1 text-xs text-purple-300 hover:text-purple-200"
+                  >
+                    Reset to Desktop
+                  </button>
+                </div>
+                <div>
+                  <label className="block text-xs text-purple-300 mb-1">
+                    Y Position (%)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.1"
+                    value={selectedElement.mobileY !== undefined ? selectedElement.mobileY : selectedElement.y}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value);
+                      if (isNaN(value)) return;
+                      handleUpdateElement(selectedElement.id, { mobileY: value });
+                    }}
+                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateElement(selectedElement.id, { mobileY: undefined })}
+                    className="mt-1 text-xs text-purple-300 hover:text-purple-200"
+                  >
+                    Reset to Desktop
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Desktop Font Size */}
+            <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-3 mb-3">
+              <label className="block text-sm font-semibold text-blue-200 mb-3">
+                💻 Desktop Font Size
+              </label>
               <div>
-                <label className="block text-sm font-semibold text-white mb-2">
-                  Y Position (%)
+                <label className="block text-xs text-blue-300 mb-1">
+                  Font Size: {selectedElement.fontSize}px
                 </label>
                 <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.1"
-                  value={selectedElement.y}
-                  onChange={(e) => handleUpdateElement(selectedElement.id, { y: parseFloat(e.target.value) || 0 })}
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-base text-white focus:border-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-400/60"
+                  type="range"
+                  min="12"
+                  max="120"
+                  value={selectedElement.fontSize}
+                  onChange={(e) => handleUpdateElement(selectedElement.id, { fontSize: parseInt(e.target.value) })}
+                  className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
                 />
               </div>
             </div>
 
-            {/* Font Size */}
-            <div>
-              <label className="block text-sm font-semibold text-white mb-2">
-                Font Size: {selectedElement.fontSize}px
+            {/* Mobile Font Size */}
+            <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-3 mb-3">
+              <label className="block text-sm font-semibold text-purple-200 mb-3">
+                📱 Mobile Font Size (Optional - uses desktop if not set)
               </label>
-              <input
-                type="range"
-                min="12"
-                max="120"
-                value={selectedElement.fontSize}
-                onChange={(e) => handleUpdateElement(selectedElement.id, { fontSize: parseInt(e.target.value) })}
-                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-brand-500"
-              />
+              <div>
+                <label className="block text-xs text-purple-300 mb-1">
+                  Font Size: {selectedElement.mobileFontSize !== undefined ? selectedElement.mobileFontSize : Math.max(12, Math.round(selectedElement.fontSize * 0.7))}px
+                </label>
+                <input
+                  type="range"
+                  min="8"
+                  max="80"
+                  value={selectedElement.mobileFontSize !== undefined ? selectedElement.mobileFontSize : Math.max(12, Math.round(selectedElement.fontSize * 0.7))}
+                  onChange={(e) => handleUpdateElement(selectedElement.id, { mobileFontSize: parseInt(e.target.value) })}
+                  className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleUpdateElement(selectedElement.id, { mobileFontSize: undefined })}
+                  className="mt-1 text-xs text-purple-300 hover:text-purple-200"
+                >
+                  Reset to Desktop
+                </button>
+              </div>
             </div>
 
             {/* Font Family */}

@@ -169,8 +169,14 @@ const LoginPage = () => {
               )}>H</span>
             </div>
             <div>
-              <p className={cn('font-display text-3xl sm:text-4xl font-bold', getTextColor('primary'))}>Hezak Boutique</p>
-              <p className={cn('text-sm sm:text-base mt-1', getTextColor('secondary'))}>Premium Lifestyle Curation</p>
+              <p className={cn(
+                'font-display text-3xl sm:text-4xl font-bold',
+                theme === 'light' ? 'text-gray-900' : theme === 'elegant' ? 'text-[#2d1b0e]' : theme === 'fashion' ? 'text-[#581c87]' : 'text-white'
+              )}>Hezak Boutique</p>
+              <p className={cn(
+                'text-sm sm:text-base mt-1',
+                theme === 'light' ? 'text-gray-700' : theme === 'elegant' ? 'text-[#3d2817]' : theme === 'fashion' ? 'text-[#6b21a8]' : 'text-slate-300'
+              )}>Premium Lifestyle Curation</p>
             </div>
           </Link>
         </div>
@@ -191,10 +197,16 @@ const LoginPage = () => {
           <div className="p-6 sm:p-8 md:p-10 lg:p-12 space-y-6 sm:space-y-8">
             {/* Header */}
             <div className="space-y-3 text-center">
-              <h1 className={cn('text-3xl sm:text-4xl md:text-5xl font-bold', getTextColor('primary'))}>
+              <h1 className={cn(
+                'text-3xl sm:text-4xl md:text-5xl font-bold',
+                theme === 'light' ? 'text-gray-900' : theme === 'elegant' ? 'text-[#2d1b0e]' : theme === 'fashion' ? 'text-[#581c87]' : 'text-white'
+              )}>
                 {isRegisterMode ? 'Create Your Account' : 'Welcome Back'}
               </h1>
-              <p className={cn('text-base sm:text-lg', getTextColor('secondary'))}>
+              <p className={cn(
+                'text-base sm:text-lg',
+                theme === 'light' ? 'text-gray-700' : theme === 'elegant' ? 'text-[#3d2817]' : theme === 'fashion' ? 'text-[#6b21a8]' : 'text-slate-300'
+              )}>
                 {isRegisterMode
                   ? 'Join us to discover premium fashion and lifestyle products'
                   : 'Sign in to continue your premium shopping experience'}
@@ -279,7 +291,10 @@ const LoginPage = () => {
                   <div className={cn('w-full border-t', theme === 'elegant' ? 'border-[#ddd4c4]' : theme === 'fashion' ? 'border-[#d8b4fe]' : theme === 'light' ? 'border-gray-300' : 'border-white/20')}></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className={cn('px-4 bg-inherit', getTextColor('secondary'))}>
+                  <span className={cn(
+                    'px-4 bg-inherit',
+                    theme === 'light' ? 'text-gray-600' : theme === 'elegant' ? 'text-[#5a4a3a]' : theme === 'fashion' ? 'text-[#7c3aed]' : 'text-slate-400'
+                  )}>
                     {isRegisterMode ? 'Or create account with email' : 'Or sign in with email'}
                   </span>
                 </div>

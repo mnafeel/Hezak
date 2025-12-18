@@ -16,7 +16,11 @@ const textElementSchema = z.object({
   lineHeight: z.number().optional(),
   animation: z.enum(['fade', 'slide', 'zoom', 'bounce', 'pulse', 'none']).optional(),
   animationDelay: z.number().min(0).max(10).optional(),
-  animationDuration: z.number().min(0.1).max(10).optional()
+  animationDuration: z.number().min(0.1).max(10).optional(),
+  // Mobile-specific properties
+  mobileX: z.number().min(0).max(100).optional(),
+  mobileY: z.number().min(0).max(100).optional(),
+  mobileFontSize: z.number().min(8).max(200).optional()
 });
 
 const imageElementSchema = z.object({
@@ -49,7 +53,12 @@ const imageElementSchema = z.object({
   ),
   animation: z.enum(['fade', 'slide', 'zoom', 'bounce', 'pulse', 'none']).optional(),
   animationDelay: z.number().min(0).max(10).optional(),
-  animationDuration: z.number().min(0.1).max(10).optional()
+  animationDuration: z.number().min(0.1).max(10).optional(),
+  // Mobile-specific properties
+  mobileX: z.number().min(0).max(100).optional(),
+  mobileY: z.number().min(0).max(100).optional(),
+  mobileWidth: z.number().min(5).max(100).optional(),
+  mobileHeight: z.number().min(5).max(100).optional()
 });
 
 const bannerElementSchema = z.discriminatedUnion('type', [textElementSchema, imageElementSchema]);
