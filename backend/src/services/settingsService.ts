@@ -1,4 +1,7 @@
 import { prisma } from '../utils/prisma';
+import { USE_FIRESTORE } from '../config/database';
+import { db } from '../utils/firebaseAdmin';
+import { COLLECTIONS } from '../utils/firestore';
 
 const ADMIN_PATH_KEY = 'adminPathSlug';
 const DEFAULT_ADMIN_PATH = 'admin';
@@ -106,6 +109,29 @@ const ensureDefaultStoreName = async () => {
 };
 
 export const getStoreName = async (): Promise<string> => {
+  if (USE_FIRESTORE) {
+    try {
+      const settingsRef = db.collection(COLLECTIONS.APP_SETTINGS);
+      const doc = await settingsRef.doc(STORE_NAME_KEY).get();
+      
+      if (doc.exists) {
+        return doc.data()?.value || DEFAULT_STORE_NAME;
+      }
+      
+      // Create default if doesn't exist
+      await settingsRef.doc(STORE_NAME_KEY).set({
+        key: STORE_NAME_KEY,
+        value: DEFAULT_STORE_NAME,
+        updatedAt: new Date()
+      });
+      
+      return DEFAULT_STORE_NAME;
+    } catch (error) {
+      console.error('Error getting store name from Firestore:', error);
+      return DEFAULT_STORE_NAME;
+    }
+  }
+
   const setting = await prisma.appSetting.findUnique({
     where: { key: STORE_NAME_KEY }
   });
@@ -122,6 +148,22 @@ export const updateStoreName = async (name: string): Promise<string> => {
   const trimmed = name.trim();
   if (!trimmed) {
     throw new Error('Store name cannot be empty');
+  }
+
+  if (USE_FIRESTORE) {
+    try {
+      const settingsRef = db.collection(COLLECTIONS.APP_SETTINGS);
+      await settingsRef.doc(STORE_NAME_KEY).set({
+        key: STORE_NAME_KEY,
+        value: trimmed,
+        updatedAt: new Date()
+      }, { merge: true });
+      
+      return trimmed;
+    } catch (error) {
+      console.error('Error updating store name in Firestore:', error);
+      throw new Error('Failed to update store name');
+    }
   }
 
   const updated = await prisma.appSetting.upsert({

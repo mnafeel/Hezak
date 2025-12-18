@@ -153,9 +153,11 @@ const BannerEditor = ({
     setSelectedElementId(elementId);
     
     const element = textElements.find(el => el.id === elementId);
-    if (!element || !containerRef.current) return;
+    // Use the correct container ref based on preview mode
+    const currentContainer = previewMode === 'mobile' ? mobileContainerRef.current : containerRef.current;
+    if (!element || !currentContainer) return;
 
-    const rect = containerRef.current.getBoundingClientRect();
+    const rect = currentContainer.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
     
@@ -183,10 +185,12 @@ const BannerEditor = ({
   };
 
   useEffect(() => {
-    if (isDragging && dragOffset !== null && containerRef.current) {
+    if (isDragging && dragOffset !== null) {
       const handleGlobalMouseMove = (e: MouseEvent) => {
-        if (!containerRef.current || !isDragging || dragOffset === null) return;
-        const rect = containerRef.current.getBoundingClientRect();
+        // Use the correct container ref based on preview mode
+        const currentContainer = previewMode === 'mobile' ? mobileContainerRef.current : containerRef.current;
+        if (!currentContainer || !isDragging || dragOffset === null) return;
+        const rect = currentContainer.getBoundingClientRect();
         
         // Calculate mouse position relative to container
         const mouseX = e.clientX - rect.left;
