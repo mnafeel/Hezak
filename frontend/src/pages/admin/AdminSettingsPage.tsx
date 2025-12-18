@@ -7,6 +7,7 @@ import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
 import { useAdminPath, useUpdateAdminPath } from '../../hooks/useAdminPath';
 import { useFeaturedCount, useUpdateFeaturedCount } from '../../hooks/useFeaturedCount';
+import { useStoreName, useUpdateStoreName } from '../../hooks/useStoreName';
 import { useAdminAuthStore } from '../../store/adminAuth';
 
 interface AdminPathForm {
