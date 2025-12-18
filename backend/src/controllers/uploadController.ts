@@ -33,15 +33,37 @@ const uploadToCloudinary = async (file: MulterFile): Promise<string> => {
     throw new Error('File buffer is required for Cloudinary upload');
   }
 
+  // Determine resource type based on mimetype
+  const isVideo = file.mimetype.startsWith('video/');
+  const resourceType = isVideo ? 'video' : 'auto';
+
   return new Promise<string>((resolve, reject) => {
+    const uploadOptions: any = {
+      folder: 'uploads',
+      resource_type: resourceType,
+      chunk_size: 6000000, // 6MB chunks for large files
+    };
+
+    // Video-specific options
+    if (isVideo) {
+      uploadOptions.eager = [
+        { format: 'mp4', video_codec: 'h264' }, // Optimize video format
+      ];
+      uploadOptions.eager_async = true; // Process asynchronously to avoid timeout
+    }
+
     const stream = cloudinary.uploader.upload_stream(
-      {
-        folder: 'uploads',
-        resource_type: 'auto'
-      },
+      uploadOptions,
       (error, result) => {
-        if (error) return reject(error);
-        if (!result?.secure_url) return reject(new Error('No URL returned from Cloudinary'));
+        if (error) {
+          console.error('❌ Cloudinary upload error:', error);
+          return reject(error);
+        }
+        if (!result?.secure_url) {
+          console.error('❌ No URL returned from Cloudinary');
+          return reject(new Error('No URL returned from Cloudinary'));
+        }
+        console.log(`✅ Cloudinary upload successful: ${result.secure_url}`);
         resolve(result.secure_url);
       }
     );
@@ -81,26 +103,52 @@ export const uploadVideoHandler = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    // Try Cloudinary first, then Firebase Storage, then local storage
+    // Check file size (500MB limit)
+    const maxSize = 500 * 1024 * 1024; // 500MB
+    if (req.file.size > maxSize) {
+      return res.status(400).json({ 
+        message: 'Video file too large. Maximum size is 500MB' 
+      });
+    }
+
+    console.log(`📹 Uploading video: ${req.file.originalname}, size: ${(req.file.size / 1024 / 1024).toFixed(2)}MB`);
+
+    // For videos, ALWAYS use Cloudinary (required for video storage)
+    if (!process.env.CLOUDINARY_URL) {
+      console.error('❌ CLOUDINARY_URL not configured - videos require Cloudinary');
+      return res.status(500).json({ 
+        message: 'Video upload requires Cloudinary. Please configure CLOUDINARY_URL environment variable.',
+        error: 'Cloudinary not configured'
+      });
+    }
+
+    // Ensure file has buffer (required for Cloudinary)
+    if (!req.file.buffer) {
+      console.error('❌ File buffer is missing');
+      return res.status(400).json({ 
+        message: 'File buffer is required for video upload',
+        error: 'Invalid file format'
+      });
+    }
+
     let fileUrl: string;
     let filename: string;
 
-    if (process.env.CLOUDINARY_URL) {
+    try {
+      // Upload to Cloudinary with video-specific settings
+      console.log('☁️ Uploading video to Cloudinary...');
       fileUrl = await uploadToCloudinary(req.file);
       filename = path.basename(fileUrl);
-      console.log('✅ Video uploaded to Cloudinary:', fileUrl);
-    } else if (storage && process.env.USE_FIREBASE_STORAGE === 'true') {
-      fileUrl = await uploadToFirebaseStorage(req.file);
-      filename = path.basename(fileUrl);
-      console.log('✅ Video uploaded to Firebase Storage:', fileUrl);
-    } else {
-      // Fallback to local storage
-      filename = req.file.filename;
-      const protocol = req.protocol;
-      const host = req.get('host');
-      const baseUrl = `${protocol}://${host}`;
-      fileUrl = `${baseUrl}/uploads/${filename}`;
-      console.log('⚠️ Video stored locally (will be lost on server restart):', fileUrl);
+      console.log('✅ Video uploaded to Cloudinary successfully:', fileUrl);
+    } catch (cloudinaryError) {
+      console.error('❌ Cloudinary upload failed:', cloudinaryError);
+      
+      // Don't fallback to Firebase Storage for videos - it can crash the server
+      // Videos are too large and should only use Cloudinary
+      return res.status(500).json({ 
+        message: 'Failed to upload video to Cloudinary. Videos must be uploaded to Cloudinary.',
+        error: cloudinaryError instanceof Error ? cloudinaryError.message : 'Cloudinary upload failed'
+      });
     }
 
     return res.status(201).json({
@@ -108,7 +156,7 @@ export const uploadVideoHandler = async (req: Request, res: Response) => {
       filename
     });
   } catch (error) {
-    console.error('Error in uploadVideoHandler:', error);
+    console.error('❌ Error in uploadVideoHandler:', error);
     res.status(500).json({ 
       message: 'Failed to upload video',
       error: error instanceof Error ? error.message : 'Unknown error'
