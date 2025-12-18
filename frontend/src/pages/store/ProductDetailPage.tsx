@@ -123,7 +123,10 @@ const ProductDetailPage = () => {
   const favorite = isFavorite(product.id);
 
   // Collect all available images from the product
+  // Use product.id as primary dependency to avoid re-computing on object reference changes
   const allImages = useMemo(() => {
+    if (!product) return ['https://via.placeholder.com/600x600?text=No+Image'];
+    
     const images: string[] = [];
     const seenImages = new Set<string>();
     
@@ -134,9 +137,9 @@ const ProductDetailPage = () => {
     }
     
     // Add all color-specific images
-    if (product.colors && product.colors.length > 0) {
+    if (product.colors && Array.isArray(product.colors) && product.colors.length > 0) {
       product.colors.forEach((color) => {
-        if (color.imageUrl && !seenImages.has(color.imageUrl)) {
+        if (color?.imageUrl && !seenImages.has(color.imageUrl)) {
           images.push(color.imageUrl);
           seenImages.add(color.imageUrl);
         }
@@ -144,9 +147,9 @@ const ProductDetailPage = () => {
     }
     
     // Add gallery images
-    if (product.gallery && product.gallery.length > 0) {
+    if (product.gallery && Array.isArray(product.gallery) && product.gallery.length > 0) {
       product.gallery.forEach((img) => {
-        if (img && !seenImages.has(img)) {
+        if (img && typeof img === 'string' && !seenImages.has(img)) {
           images.push(img);
           seenImages.add(img);
         }
@@ -159,24 +162,26 @@ const ProductDetailPage = () => {
     }
     
     return images;
-  }, [product.imageUrl, product.gallery, product.colors]);
+  }, [product?.id, product?.imageUrl, product?.gallery?.join(','), product?.colors?.map(c => c?.imageUrl).filter(Boolean).join(',')]);
 
   // When color is selected, automatically switch to that color's image
   useEffect(() => {
+    if (!product) return;
+    
     if (selectedColor?.imageUrl) {
       // Find the index of the selected color's image
       const colorImageIndex = allImages.findIndex((img) => img === selectedColor.imageUrl);
       if (colorImageIndex !== -1) {
-        setCurrentImageIndex(colorImageIndex);
+        setCurrentImageIndex((prev) => prev !== colorImageIndex ? colorImageIndex : prev);
       }
     } else if (product.imageUrl) {
       // If no color selected or color has no image, show primary image
       const primaryImageIndex = allImages.findIndex((img) => img === product.imageUrl);
       if (primaryImageIndex !== -1) {
-        setCurrentImageIndex(primaryImageIndex);
+        setCurrentImageIndex((prev) => prev !== primaryImageIndex ? primaryImageIndex : prev);
       }
     }
-  }, [selectedColor, allImages, product.imageUrl]);
+  }, [selectedColor?.imageUrl, product?.imageUrl, allImages.length]);
 
   const colorRequired = product.colors.length > 0;
   const sizeRequired = product.sizes.length > 0;
