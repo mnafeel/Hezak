@@ -1,11 +1,13 @@
 import { Request, Response } from 'express';
 import { z } from 'zod';
-import { adminPathSchema, featuredCountSchema } from '../schemas/settings';
+import { adminPathSchema, featuredCountSchema, storeNameSchema } from '../schemas/settings';
 import {
   getAdminPathSlug,
   updateAdminPathSlug,
   getFeaturedItemsCount,
-  updateFeaturedItemsCount
+  updateFeaturedItemsCount,
+  getStoreName,
+  updateStoreName
 } from '../services/settingsService';
 
 export const getAdminPathHandler = async (_req: Request, res: Response) => {
@@ -49,6 +51,28 @@ export const updateFeaturedCountHandler = async (req: Request, res: Response) =>
     }
 
     return res.status(500).json({ message: 'Failed to update featured count' });
+  }
+};
+
+export const getStoreNameHandler = async (_req: Request, res: Response) => {
+  const storeName = await getStoreName();
+  res.json({ storeName });
+};
+
+export const updateStoreNameHandler = async (req: Request, res: Response) => {
+  try {
+    const { storeName } = storeNameSchema.parse(req.body);
+    const updated = await updateStoreName(storeName);
+    res.json({ storeName: updated });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        message: 'Invalid store name',
+        issues: error.issues
+      });
+    }
+
+    return res.status(500).json({ message: 'Failed to update store name' });
   }
 };
 

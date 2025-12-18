@@ -959,62 +959,20 @@ const BannerEditor = ({
                   </div>
                 </div>
 
-                {/* Mobile Position */}
+                {/* Mobile Position - Info only */}
                 <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-3 mb-3">
-                  <label className="block text-sm font-semibold text-purple-200 mb-3">
-                    📱 Mobile Position (Optional - uses desktop if not set)
+                  <label className="block text-sm font-semibold text-purple-200 mb-2">
+                    📱 Mobile Position
                   </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs text-purple-300 mb-1">
-                        X Position (%)
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        value={selectedElement.mobileX !== undefined ? selectedElement.mobileX : selectedElement.x}
-                        onChange={(e) => {
-                          const value = parseFloat(e.target.value);
-                          if (isNaN(value)) return;
-                          handleUpdateElement(selectedElement.id, { mobileX: value });
-                        }}
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleUpdateElement(selectedElement.id, { mobileX: undefined })}
-                        className="mt-1 text-xs text-purple-300 hover:text-purple-200"
-                      >
-                        Reset to Desktop
-                      </button>
-                    </div>
-                    <div>
-                      <label className="block text-xs text-purple-300 mb-1">
-                        Y Position (%)
-                      </label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.1"
-                        value={selectedElement.mobileY !== undefined ? selectedElement.mobileY : selectedElement.y}
-                        onChange={(e) => {
-                          const value = parseFloat(e.target.value);
-                          if (isNaN(value)) return;
-                          handleUpdateElement(selectedElement.id, { mobileY: value });
-                        }}
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleUpdateElement(selectedElement.id, { mobileY: undefined })}
-                        className="mt-1 text-xs text-purple-300 hover:text-purple-200"
-                      >
-                        Reset to Desktop
-                      </button>
-                    </div>
+                  <p className="text-xs text-purple-300 mb-2">
+                    Switch to Mobile preview mode and drag the element to set mobile position. Mobile position will be saved automatically when you drag in mobile preview.
+                  </p>
+                  <div className="text-xs text-purple-400">
+                    {selectedElement.mobileX !== undefined && selectedElement.mobileY !== undefined ? (
+                      <>Mobile: X={selectedElement.mobileX.toFixed(1)}%, Y={selectedElement.mobileY.toFixed(1)}%</>
+                    ) : (
+                      <>Using desktop position (drag in mobile preview to set separate mobile position)</>
+                    )}
                   </div>
                 </div>
 
@@ -1055,58 +1013,14 @@ const BannerEditor = ({
                   </div>
                 </div>
 
-                {/* Mobile Size */}
+                {/* Mobile Size - Info only */}
                 <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-3 mb-3">
-                  <label className="block text-sm font-semibold text-purple-200 mb-3">
-                    📱 Mobile Size (Optional - uses desktop if not set)
+                  <label className="block text-sm font-semibold text-purple-200 mb-2">
+                    📱 Mobile Size
                   </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs text-purple-300 mb-1">
-                        Width (%): {selectedElement.mobileWidth !== undefined ? selectedElement.mobileWidth : selectedElement.width}%
-                      </label>
-                      <input
-                        type="range"
-                        min="5"
-                        max="100"
-                        value={selectedElement.mobileWidth !== undefined ? selectedElement.mobileWidth : selectedElement.width}
-                        onChange={(e) => handleUpdateElement(selectedElement.id, { mobileWidth: parseInt(e.target.value) })}
-                        className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleUpdateElement(selectedElement.id, { mobileWidth: undefined })}
-                        className="mt-1 text-xs text-purple-300 hover:text-purple-200"
-                      >
-                        Reset to Desktop
-                      </button>
-                    </div>
-                    <div>
-                      <label className="block text-xs text-purple-300 mb-1">
-                        Height (%)
-                      </label>
-                      <input
-                        type="number"
-                        min="5"
-                        max="100"
-                        step="0.1"
-                        value={selectedElement.mobileHeight !== undefined ? selectedElement.mobileHeight : (selectedElement.height || '')}
-                        onChange={(e) => {
-                          const value = e.target.value ? parseFloat(e.target.value) : undefined;
-                          handleUpdateElement(selectedElement.id, { mobileHeight: value });
-                        }}
-                        placeholder="Auto"
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleUpdateElement(selectedElement.id, { mobileHeight: undefined })}
-                        className="mt-1 text-xs text-purple-300 hover:text-purple-200"
-                      >
-                        Reset to Desktop
-                      </button>
-                    </div>
-                  </div>
+                  <p className="text-xs text-purple-300">
+                    Mobile size uses desktop size by default. Adjust desktop size above and it will apply to mobile unless you set a separate mobile position (which scales proportionally).
+                  </p>
                 </div>
 
                 {/* Product Link */}
@@ -1253,110 +1167,39 @@ const BannerEditor = ({
               </div>
             </div>
 
-            {/* Mobile Position */}
+            {/* Mobile Position - Info only */}
             <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-3 mb-3">
-              <label className="block text-sm font-semibold text-purple-200 mb-3">
-                📱 Mobile Position (Optional - uses desktop if not set)
+              <label className="block text-sm font-semibold text-purple-200 mb-2">
+                📱 Mobile Position
               </label>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-purple-300 mb-1">
-                    X Position (%)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value={selectedElement.mobileX !== undefined ? selectedElement.mobileX : selectedElement.x}
-                    onChange={(e) => {
-                      const value = parseFloat(e.target.value);
-                      if (isNaN(value)) return;
-                      handleUpdateElement(selectedElement.id, { mobileX: value });
-                    }}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleUpdateElement(selectedElement.id, { mobileX: undefined })}
-                    className="mt-1 text-xs text-purple-300 hover:text-purple-200"
-                  >
-                    Reset to Desktop
-                  </button>
-                </div>
-                <div>
-                  <label className="block text-xs text-purple-300 mb-1">
-                    Y Position (%)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                    value={selectedElement.mobileY !== undefined ? selectedElement.mobileY : selectedElement.y}
-                    onChange={(e) => {
-                      const value = parseFloat(e.target.value);
-                      if (isNaN(value)) return;
-                      handleUpdateElement(selectedElement.id, { mobileY: value });
-                    }}
-                    className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-white focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-400/60"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleUpdateElement(selectedElement.id, { mobileY: undefined })}
-                    className="mt-1 text-xs text-purple-300 hover:text-purple-200"
-                  >
-                    Reset to Desktop
-                  </button>
-                </div>
+              <p className="text-xs text-purple-300 mb-2">
+                Switch to Mobile preview mode and drag the element to set mobile position. Mobile position will be saved automatically when you drag in mobile preview.
+              </p>
+              <div className="text-xs text-purple-400">
+                {selectedElement.mobileX !== undefined && selectedElement.mobileY !== undefined ? (
+                  <>Mobile: X={selectedElement.mobileX.toFixed(1)}%, Y={selectedElement.mobileY.toFixed(1)}%</>
+                ) : (
+                  <>Using desktop position (drag in mobile preview to set separate mobile position)</>
+                )}
               </div>
             </div>
 
-            {/* Desktop Font Size */}
-            <div className="rounded-xl border border-blue-500/30 bg-blue-500/10 p-3 mb-3">
-              <label className="block text-sm font-semibold text-blue-200 mb-3">
-                💻 Desktop Font Size
+            {/* Font Size */}
+            <div>
+              <label className="block text-sm font-semibold text-white mb-2">
+                Font Size: {selectedElement.fontSize}px
               </label>
-              <div>
-                <label className="block text-xs text-blue-300 mb-1">
-                  Font Size: {selectedElement.fontSize}px
-                </label>
-                <input
-                  type="range"
-                  min="12"
-                  max="120"
-                  value={selectedElement.fontSize}
-                  onChange={(e) => handleUpdateElement(selectedElement.id, { fontSize: parseInt(e.target.value) })}
-                  className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-blue-500"
-                />
-              </div>
-            </div>
-
-            {/* Mobile Font Size */}
-            <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-3 mb-3">
-              <label className="block text-sm font-semibold text-purple-200 mb-3">
-                📱 Mobile Font Size (Optional - uses desktop if not set)
-              </label>
-              <div>
-                <label className="block text-xs text-purple-300 mb-1">
-                  Font Size: {selectedElement.mobileFontSize !== undefined ? selectedElement.mobileFontSize : Math.max(12, Math.round(selectedElement.fontSize * 0.7))}px
-                </label>
-                <input
-                  type="range"
-                  min="8"
-                  max="80"
-                  value={selectedElement.mobileFontSize !== undefined ? selectedElement.mobileFontSize : Math.max(12, Math.round(selectedElement.fontSize * 0.7))}
-                  onChange={(e) => handleUpdateElement(selectedElement.id, { mobileFontSize: parseInt(e.target.value) })}
-                  className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-purple-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleUpdateElement(selectedElement.id, { mobileFontSize: undefined })}
-                  className="mt-1 text-xs text-purple-300 hover:text-purple-200"
-                >
-                  Reset to Desktop
-                </button>
-              </div>
+              <input
+                type="range"
+                min="12"
+                max="120"
+                value={selectedElement.fontSize}
+                onChange={(e) => handleUpdateElement(selectedElement.id, { fontSize: parseInt(e.target.value) })}
+                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-brand-500"
+              />
+              <p className="text-xs text-slate-400 mt-1">
+                Mobile font size auto-scales to 70% of desktop size. Switch to mobile preview and drag to adjust mobile position separately.
+              </p>
             </div>
 
             {/* Font Family */}

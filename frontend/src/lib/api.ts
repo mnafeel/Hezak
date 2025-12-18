@@ -457,3 +457,14 @@ export const updateSiteSettings = async (payload: Partial<SiteSettings>): Promis
   return response.data;
 };
 
+// Store Name API functions
+export const fetchStoreName = async (): Promise<{ storeName: string }> => {
+  const response = await apiClient.get<{ storeName: string }>('/settings/store-name');
+  return response.data;
+};
+
+export const updateStoreName = async (storeName: string): Promise<{ storeName: string }> => {
+  const response = await apiClient.put<{ storeName: string }>('/settings/store-name', { storeName });
+  return response.data;
+};
+

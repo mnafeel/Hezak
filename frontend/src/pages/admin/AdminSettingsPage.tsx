@@ -25,6 +25,8 @@ const AdminSettingsPage = () => {
   const { mutateAsync, isPending } = useUpdateAdminPath();
   const featuredCountData = useFeaturedCount();
   const { mutateAsync: updateFeaturedCount, isPending: isUpdatingFeatured } = useUpdateFeaturedCount();
+  const storeNameData = useStoreName();
+  const { mutateAsync: updateStoreName, isPending: isUpdatingStoreName } = useUpdateStoreName();
   const {
     register,
     handleSubmit,
@@ -47,6 +49,17 @@ const AdminSettingsPage = () => {
     }
   });
 
+  const {
+    register: registerStoreName,
+    handleSubmit: handleSubmitStoreName,
+    reset: resetStoreName,
+    formState: { errors: storeNameErrors }
+  } = useForm<StoreNameForm>({
+    defaultValues: {
+      storeName: storeNameData.data?.storeName ?? 'Hezak Boutique'
+    }
+  });
+
   useEffect(() => {
     if (data?.adminPath) {
       reset({ adminPath: data.adminPath });
@@ -58,6 +71,12 @@ const AdminSettingsPage = () => {
       resetFeatured({ featuredCount: featuredCountData.data });
     }
   }, [featuredCountData.data, resetFeatured]);
+
+  useEffect(() => {
+    if (storeNameData.data?.storeName) {
+      resetStoreName({ storeName: storeNameData.data.storeName });
+    }
+  }, [storeNameData.data, resetStoreName]);
 
   const onSubmit = async (values: AdminPathForm) => {
     try {
@@ -85,6 +104,15 @@ const AdminSettingsPage = () => {
       toast.success(`Featured items count updated to ${values.featuredCount}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to update featured count';
+      toast.error(message);
+    }
+  };
+
+  const onSubmitStoreName = async (values: StoreNameForm) => {
+    try {
+      await updateStoreName(values.storeName);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update store name';
       toast.error(message);
     }
   };
@@ -176,6 +204,48 @@ const AdminSettingsPage = () => {
             </div>
             <Button type="submit" size="lg" disabled={isUpdatingFeatured}>
               {isUpdatingFeatured ? 'Saving…' : 'Save featured count'}
+            </Button>
+          </form>
+        )}
+      </Card>
+
+      <Card title="Store Name" className="max-w-xl">
+        <p className="mb-4 text-sm text-slate-300">
+          Set the store name that appears in the navbar on the user-facing pages.
+        </p>
+        {storeNameData.isLoading ? (
+          <p className="text-sm text-slate-200">Loading current settings…</p>
+        ) : (
+          <form className="space-y-4" onSubmit={handleSubmitStoreName(onSubmitStoreName)}>
+            <Input
+              label="Store Name"
+              placeholder="e.g. Hezak Boutique"
+              {...registerStoreName('storeName', {
+                required: 'Store name is required',
+                minLength: {
+                  value: 1,
+                  message: 'Store name must be at least 1 character'
+                },
+                maxLength: {
+                  value: 100,
+                  message: 'Store name must be at most 100 characters'
+                }
+              })}
+              error={storeNameErrors.storeName?.message}
+            />
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
+              <p>
+                Current store name:{' '}
+                <span className="font-semibold text-white">
+                  {storeNameData.data?.storeName ?? 'Hezak Boutique'}
+                </span>
+              </p>
+              <p className="mt-2">
+                This name will appear in the navbar on all user-facing pages.
+              </p>
+            </div>
+            <Button type="submit" size="lg" disabled={isUpdatingStoreName}>
+              {isUpdatingStoreName ? 'Saving…' : 'Save store name'}
             </Button>
           </form>
         )}

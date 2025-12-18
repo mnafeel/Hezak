@@ -13,6 +13,11 @@ export const featuredCountSchema = z.object({
   featuredCount: z.number().int().min(1).max(20)
 });
 
+export const storeNameSchema = z.object({
+  storeName: z.string().min(1).max(100).trim()
+});
+
 export type AdminPathInput = z.infer<typeof adminPathSchema>;
 export type FeaturedCountInput = z.infer<typeof featuredCountSchema>;
+export type StoreNameInput = z.infer<typeof storeNameSchema>;
 

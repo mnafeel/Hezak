@@ -7,6 +7,7 @@ import { useUserAuthStore } from '../store/userAuth';
 import { useCategories } from '../hooks/useCategories';
 import { useThemeStore, applyTheme } from '../store/theme';
 import { useThemeColors } from '../hooks/useThemeColors';
+import { useStoreName } from '../hooks/useStoreName';
 import { formatCurrency, cn } from '../lib/utils';
 import CartSidebar from '../components/shared/CartSidebar';
 import FavoritesSidebar from '../components/shared/FavoritesSidebar';
@@ -30,6 +31,8 @@ const StoreLayout = () => {
   const clearAuth = useUserAuthStore((state) => state.clearAuth);
   const theme = useThemeStore((state) => state.theme);
   const { getTextColor, getBorderColor, getGlassPanelClass, getHoverEffect, getShadowClass } = useThemeColors();
+  const { data: storeNameData } = useStoreName();
+  const storeName = storeNameData?.storeName || 'Hezak Boutique';
 
   // Apply theme synchronously before browser paint to prevent blank page
   useLayoutEffect(() => {
@@ -142,7 +145,7 @@ const StoreLayout = () => {
                 <span className={`font-display text-lg sm:text-xl ${theme === 'light' ? 'text-gray-900' : theme === 'elegant' ? 'text-[#3d2817]' : theme === 'fashion' ? 'text-[#581c87]' : 'text-white'}`}>H</span>
               </div>
               <div>
-                <p className={`font-display text-xl sm:text-2xl font-semibold ${getTextColor('primary')}`}>Hezak Boutique</p>
+                <p className={`font-display text-xl sm:text-2xl font-semibold ${getTextColor('primary')}`}>{storeName}</p>
                 <p className={`text-xs sm:text-sm ${getTextColor('secondary')} hidden sm:block`}>Premium lifestyle curation</p>
               </div>
             </Link>
@@ -428,7 +431,7 @@ const StoreLayout = () => {
         {/* Footer */}
           <footer className={`border-t ${getBorderColor()} py-8 text-sm ${getTextColor('tertiary')}`}>
           <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-            <span>© {new Date().getFullYear()} Hezak Boutique. All rights reserved.</span>
+            <span>© {new Date().getFullYear()} {storeName}. All rights reserved.</span>
             <span>Crafted with passion for exquisite experiences.</span>
           </div>
         </footer>

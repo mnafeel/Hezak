@@ -91,3 +91,50 @@ export const updateFeaturedItemsCount = async (count: number): Promise<number> =
   return parseInt(updated.value, 10);
 };
 
+const STORE_NAME_KEY = 'storeName';
+const DEFAULT_STORE_NAME = 'Hezak Boutique';
+
+const ensureDefaultStoreName = async () => {
+  await prisma.appSetting.upsert({
+    where: { key: STORE_NAME_KEY },
+    create: {
+      key: STORE_NAME_KEY,
+      value: DEFAULT_STORE_NAME
+    },
+    update: {}
+  });
+};
+
+export const getStoreName = async (): Promise<string> => {
+  const setting = await prisma.appSetting.findUnique({
+    where: { key: STORE_NAME_KEY }
+  });
+
+  if (!setting) {
+    await ensureDefaultStoreName();
+    return DEFAULT_STORE_NAME;
+  }
+
+  return setting.value || DEFAULT_STORE_NAME;
+};
+
+export const updateStoreName = async (name: string): Promise<string> => {
+  const trimmed = name.trim();
+  if (!trimmed) {
+    throw new Error('Store name cannot be empty');
+  }
+
+  const updated = await prisma.appSetting.upsert({
+    where: { key: STORE_NAME_KEY },
+    create: {
+      key: STORE_NAME_KEY,
+      value: trimmed
+    },
+    update: {
+      value: trimmed
+    }
+  });
+
+  return updated.value;
+};
+
