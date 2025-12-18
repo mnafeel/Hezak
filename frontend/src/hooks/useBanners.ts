@@ -25,13 +25,17 @@ export const useActiveBanners = () => {
   return useQuery<Banner[]>({
     queryKey: ['banners', 'active'],
     queryFn: async () => {
+      console.log('🔄 Fetching active banners from API...');
       const data = await fetchActiveBanners();
+      console.log('✅ Active banners fetched:', { count: Array.isArray(data) ? data.length : 0, data });
       return Array.isArray(data) ? data : [];
     },
     retry: 3,
     retryDelay: 1000,
     refetchOnWindowFocus: true,
-    staleTime: 30000, // 30 seconds
+    refetchOnMount: true, // Always refetch when component mounts
+    staleTime: 0, // Always consider data stale - refetch immediately
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes (formerly cacheTime)
     initialData: []
   });
 };

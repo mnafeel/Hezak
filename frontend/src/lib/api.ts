@@ -370,11 +370,22 @@ export const fetchBanners = async (): Promise<Banner[]> => {
 
 export const fetchActiveBanners = async (): Promise<Banner[]> => {
   try {
+    console.log('🌐 Fetching active banners from:', '/banners/active');
     const response = await apiClient.get<any[]>('/banners/active');
     const data = response.data;
-    if (!Array.isArray(data)) return [];
+    console.log('📥 Active banners response:', { 
+      status: response.status, 
+      dataLength: Array.isArray(data) ? data.length : 0,
+      data 
+    });
+    
+    if (!Array.isArray(data)) {
+      console.warn('⚠️ Active banners response is not an array:', data);
+      return [];
+    }
+    
     // Parse textElements from JSON if needed
-    return data.map(banner => ({
+    const parsedBanners = data.map(banner => ({
       ...banner,
       textElements: (() => {
         if (Array.isArray(banner.textElements)) {
@@ -390,8 +401,11 @@ export const fetchActiveBanners = async (): Promise<Banner[]> => {
         return [];
       })()
     }));
+    
+    console.log('✅ Parsed active banners:', { count: parsedBanners.length, banners: parsedBanners });
+    return parsedBanners;
   } catch (error) {
-    console.error('Error fetching active banners:', error);
+    console.error('❌ Error fetching active banners:', error);
     return [];
   }
 };
