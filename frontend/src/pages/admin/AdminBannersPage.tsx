@@ -198,7 +198,6 @@ const AdminBannersPage = () => {
         textAlign: values.textAlign || null,
         animationStyle: values.animationStyle || null,
         overlayStyle: values.overlayStyle || null,
-        mobileAspectRatio: values.mobileAspectRatio || '4/3',
         mobileAspectRatio: values.mobileAspectRatio || '4/3'
       };
 
@@ -415,7 +414,6 @@ const AdminBannersPage = () => {
         textAlign: values.textAlign || null,
         animationStyle: values.animationStyle || null,
         overlayStyle: values.overlayStyle || null,
-        mobileAspectRatio: values.mobileAspectRatio || '4/3',
         mobileAspectRatio: values.mobileAspectRatio || '4/3'
       };
 
