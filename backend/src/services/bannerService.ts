@@ -1,4 +1,14 @@
 import { prisma } from '../utils/prisma';
+import { USE_FIRESTORE } from '../config/database';
+import {
+  getAllBannersFirestore,
+  getActiveBannersFirestore,
+  getBannerByIdFirestore,
+  createBannerFirestore,
+  updateBannerFirestore,
+  deleteBannerFirestore,
+  reorderBannersFirestore
+} from './firestore/bannerService';
 
 export interface BannerInput {
   title?: string | null;
@@ -21,6 +31,10 @@ export interface BannerUpdate extends Partial<BannerInput> {
 }
 
 export const getAllBanners = async () => {
+  if (USE_FIRESTORE) {
+    return getAllBannersFirestore();
+  }
+
   try {
     // First, try to fix any corrupted textElements
     try {
@@ -55,6 +69,10 @@ export const getAllBanners = async () => {
 };
 
 export const getActiveBanners = async () => {
+  if (USE_FIRESTORE) {
+    return getActiveBannersFirestore();
+  }
+
   try {
     // First, try to fix any corrupted textElements
     try {
@@ -91,12 +109,19 @@ export const getActiveBanners = async () => {
 };
 
 export const getBannerById = async (id: number) => {
+  if (USE_FIRESTORE) {
+    return getBannerByIdFirestore(id);
+  }
   return prisma.banner.findUnique({
     where: { id }
   });
 };
 
 export const createBanner = async (data: BannerInput) => {
+  if (USE_FIRESTORE) {
+    return createBannerFirestore(data);
+  }
+
   // Get the highest order value
   const maxOrder = await prisma.banner.aggregate({
     _max: { order: true }
@@ -131,6 +156,10 @@ export const createBanner = async (data: BannerInput) => {
 };
 
 export const updateBanner = async (id: number, data: Partial<BannerInput>) => {
+  if (USE_FIRESTORE) {
+    return updateBannerFirestore(id, data);
+  }
+
   // Build update data, only including fields that are explicitly provided
   const updateData: any = {};
   
@@ -159,12 +188,19 @@ export const updateBanner = async (id: number, data: Partial<BannerInput>) => {
 };
 
 export const deleteBanner = async (id: number) => {
+  if (USE_FIRESTORE) {
+    return deleteBannerFirestore(id);
+  }
   return prisma.banner.delete({
     where: { id }
   });
 };
 
 export const reorderBanners = async (bannerOrders: Array<{ id: number; order: number }>) => {
+  if (USE_FIRESTORE) {
+    return reorderBannersFirestore(bannerOrders);
+  }
+
   const updates = bannerOrders.map(({ id, order }) =>
     prisma.banner.update({
       where: { id },
