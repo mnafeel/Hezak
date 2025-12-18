@@ -47,12 +47,25 @@ const ProductDetailPage = () => {
 
   useEffect(() => {
     if (product) {
-      const firstColor = product.colors.length > 0 ? product.colors[0] ?? null : null;
-      setSelectedColor(firstColor);
-      setSelectedSize(product.sizes.length > 0 ? product.sizes[0] ?? null : null);
-      // Image index will be set by the color selection effect
+      const firstColor = product.colors && product.colors.length > 0 ? product.colors[0] ?? null : null;
+      const firstSize = product.sizes && product.sizes.length > 0 ? product.sizes[0] ?? null : null;
+      
+      // Only update if values actually changed to prevent infinite loops
+      setSelectedColor((prev) => {
+        if (prev?.name === firstColor?.name && prev?.hex === firstColor?.hex) {
+          return prev; // No change, return previous value
+        }
+        return firstColor;
+      });
+      
+      setSelectedSize((prev) => {
+        if (prev?.name === firstSize?.name) {
+          return prev; // No change, return previous value
+        }
+        return firstSize;
+      });
     }
-  }, [product]);
+  }, [product?.id, product?.colors, product?.sizes]); // Use specific dependencies instead of entire product object
 
   // Show error state
   if (productsError) {
