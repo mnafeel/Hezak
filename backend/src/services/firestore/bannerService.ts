@@ -45,12 +45,15 @@ const toBanner = (firestoreBanner: FirestoreBanner): any => {
 
 export const getAllBannersFirestore = async () => {
   try {
+    console.log('📋 Fetching all banners from Firestore...');
+    
     // First try with orderBy (requires index)
     try {
       const bannersSnapshot = await getCollection(COLLECTIONS.BANNERS)
         .orderBy('order', 'asc')
         .get();
 
+      console.log(`✅ Found ${bannersSnapshot.size} banners with orderBy query`);
       const banners = snapshotToArray<FirestoreBanner>(bannersSnapshot);
       // Sort by createdAt desc in memory for same order values
       const sortedBanners = banners.sort((a, b) => {
@@ -61,12 +64,15 @@ export const getAllBannersFirestore = async () => {
         const bDate = toDate(b.createdAt).getTime();
         return bDate - aDate; // Descending by createdAt
       });
-      return sortedBanners.map(toBanner);
+      const result = sortedBanners.map(toBanner);
+      console.log(`✅ Returning ${result.length} banners`);
+      return result;
     } catch (error: any) {
       // If index doesn't exist, fetch all and sort in memory
       if (error?.code === 9 || error?.message?.includes('index')) {
         console.log('⚠️ Firestore index not found, fetching all banners and sorting in memory');
         const bannersSnapshot = await getCollection(COLLECTIONS.BANNERS).get();
+        console.log(`✅ Found ${bannersSnapshot.size} banners without orderBy query`);
         const banners = snapshotToArray<FirestoreBanner>(bannersSnapshot);
         // Sort by order, then by createdAt desc
         const sortedBanners = banners.sort((a, b) => {
@@ -77,12 +83,14 @@ export const getAllBannersFirestore = async () => {
           const bDate = toDate(b.createdAt).getTime();
           return bDate - aDate; // Descending by createdAt
         });
-        return sortedBanners.map(toBanner);
+        const result = sortedBanners.map(toBanner);
+        console.log(`✅ Returning ${result.length} banners`);
+        return result;
       }
       throw error;
     }
   } catch (error) {
-    console.error('Error fetching banners from Firestore:', error);
+    console.error('❌ Error fetching banners from Firestore:', error);
     throw error;
   }
 };

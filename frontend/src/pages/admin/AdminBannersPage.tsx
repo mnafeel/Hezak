@@ -75,9 +75,14 @@ const AdminBannersPage = () => {
 
   const { mutateAsync: createMutation, isPending: isCreating } = useMutation({
     mutationFn: createBanner,
-    onSuccess: () => {
+    onSuccess: (newBanner) => {
+      console.log('✅ Banner created successfully:', newBanner);
+      // Invalidate and immediately refetch
       queryClient.invalidateQueries({ queryKey: ['admin', 'banners'] });
       queryClient.invalidateQueries({ queryKey: ['banners', 'active'] });
+      // Force immediate refetch
+      queryClient.refetchQueries({ queryKey: ['admin', 'banners'] });
+      queryClient.refetchQueries({ queryKey: ['banners', 'active'] });
     }
   });
 
