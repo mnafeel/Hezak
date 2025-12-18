@@ -24,7 +24,7 @@ const BannerSlideshow = () => {
 
   if (isLoading) {
     return (
-      <div className="relative w-full aspect-[21/9] rounded-3xl overflow-hidden bg-slate-800/50">
+      <div className="relative w-full aspect-[4/3] sm:aspect-[16/9] md:aspect-[21/9] rounded-3xl overflow-hidden bg-slate-800/50">
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-400/30 border-t-brand-400" />
         </div>
@@ -112,7 +112,7 @@ const BannerSlideshow = () => {
   };
 
   return (
-    <div className="relative w-full aspect-[21/9] rounded-3xl overflow-hidden">
+    <div className="relative w-full aspect-[4/3] sm:aspect-[16/9] md:aspect-[21/9] rounded-3xl overflow-hidden">
       <AnimatePresence mode="wait">
         <motion.div
           key={currentBanner.id}
@@ -372,7 +372,7 @@ const BannerSlideshow = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2, duration: 0.5 }}
-                        className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-3 sm:mb-4 drop-shadow-2xl"
+                        className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-bold mb-2 sm:mb-3 md:mb-4 drop-shadow-2xl"
                         style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.8)' }}
                       >
                         {currentBanner.title}
@@ -383,7 +383,7 @@ const BannerSlideshow = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3, duration: 0.5 }}
-                        className="text-base sm:text-lg md:text-xl lg:text-2xl text-white/95 max-w-4xl leading-relaxed drop-shadow-lg"
+                        className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-white/95 max-w-4xl leading-relaxed drop-shadow-lg"
                         style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.8)' }}
                       >
                         {currentBanner.text}
@@ -624,7 +624,7 @@ const BannerSlideshow = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2, duration: 0.5 }}
-                        className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-3 sm:mb-4 drop-shadow-2xl"
+                        className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl 2xl:text-6xl font-bold mb-2 sm:mb-3 md:mb-4 drop-shadow-2xl"
                         style={{ textShadow: '2px 2px 8px rgba(0,0,0,0.8)' }}
                       >
                         {currentBanner.title}
@@ -635,7 +635,7 @@ const BannerSlideshow = () => {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3, duration: 0.5 }}
-                        className="text-base sm:text-lg md:text-xl lg:text-2xl text-white/95 max-w-4xl leading-relaxed drop-shadow-lg"
+                        className="text-sm sm:text-base md:text-lg lg:text-xl xl:text-2xl text-white/95 max-w-4xl leading-relaxed drop-shadow-lg"
                         style={{ textShadow: '1px 1px 4px rgba(0,0,0,0.8)' }}
                       >
                         {currentBanner.text}
