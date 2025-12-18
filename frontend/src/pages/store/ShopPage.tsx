@@ -152,6 +152,13 @@ const ShopPage = () => {
       <div className="space-y-2">
         <h1 className={`text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold ${getTextColor('primary')}`}>{pageTitle}</h1>
         <p className={`text-sm sm:text-base md:text-lg ${getTextColor('secondary')}`}>{pageDescription}</p>
+        {!productLoading && (
+          <p className={`text-sm ${getTextColor('tertiary')}`}>
+            {`${products.length} ${products.length === 1 ? 'product' : 'products'} ${
+              view || selectedCategory ? 'found' : 'available'
+            }${allProducts.length !== products.length ? ` (${allProducts.length} total)` : ''}`}
+          </p>
+        )}
       </div>
 
       {/* Products Section */}
@@ -159,14 +166,9 @@ const ShopPage = () => {
         {/* Results Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className={`text-2xl font-bold ${getTextColor('primary')} md:text-3xl`}>{pageTitle}</h2>
-            <p className={`mt-1 text-sm ${getTextColor('tertiary')}`}>
-              {productLoading
-                ? 'Loading...'
-                : `${products.length} ${products.length === 1 ? 'product' : 'products'} ${
-                    view || selectedCategory ? 'found' : 'available'
-                  }${allProducts.length !== products.length ? ` (${allProducts.length} total)` : ''}`}
-            </p>
+            {productLoading && (
+              <p className={`text-sm ${getTextColor('tertiary')}`}>Loading...</p>
+            )}
           </div>
           {(view || selectedCategory) && (
             <button
