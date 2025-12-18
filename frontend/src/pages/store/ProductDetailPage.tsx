@@ -20,7 +20,7 @@ const composeKey = (productId: number, color?: ProductColorOption | null, size?:
 const ProductDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: products = [], isLoading: productsLoading } = useProducts();
+  const { data: products = [], isLoading: productsLoading, isError: productsError, error: productsErrorDetails } = useProducts();
   const user = useUserAuthStore((state) => state.user);
   const items = useCartStore((state) => state.items);
   const addItem = useCartStore((state) => state.addItem);
@@ -38,6 +38,13 @@ const ProductDetailPage = () => {
     return products.find((p) => p.id === Number.parseInt(id, 10));
   }, [products, id]);
 
+  // Log errors for debugging
+  useEffect(() => {
+    if (productsError) {
+      console.error('❌ ProductDetailPage: Error fetching products:', productsErrorDetails);
+    }
+  }, [productsError, productsErrorDetails]);
+
   useEffect(() => {
     if (product) {
       const firstColor = product.colors.length > 0 ? product.colors[0] ?? null : null;
@@ -47,10 +54,34 @@ const ProductDetailPage = () => {
     }
   }, [product]);
 
+  // Show error state
+  if (productsError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center py-20">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className={`rounded-2xl p-6 ${getGlassPanelClass()} ${getShadowClass('lg')}`}>
+            <h2 className={`text-2xl font-semibold ${getTextColor('primary')} mb-2`}>Error Loading Product</h2>
+            <p className={`mt-2 ${getTextColor('secondary')} mb-4`}>
+              {productsErrorDetails instanceof Error ? productsErrorDetails.message : 'Failed to load product. Please try again.'}
+            </p>
+            <div className="flex gap-3 justify-center">
+              <Button variant="secondary" onClick={() => window.location.reload()} className="mt-2">
+                Retry
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/')} className="mt-2">
+                Back to Home
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // Show loading state while products are being fetched
   if (productsLoading) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center py-20">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-brand-400/30 border-t-brand-400 mb-4" />
           <p className={`text-lg ${getTextColor('secondary')}`}>Loading product...</p>
@@ -62,13 +93,15 @@ const ProductDetailPage = () => {
   // Show not found only after loading is complete
   if (!product) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="text-center">
-          <h2 className={`text-2xl font-semibold ${getTextColor('primary')}`}>Product not found</h2>
-          <p className={`mt-2 ${getTextColor('secondary')}`}>The product you're looking for doesn't exist.</p>
-          <Button variant="secondary" onClick={() => navigate('/')} className="mt-4">
-            Back to Home
-          </Button>
+      <div className="flex min-h-screen items-center justify-center py-20">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className={`rounded-2xl p-6 ${getGlassPanelClass()} ${getShadowClass('lg')}`}>
+            <h2 className={`text-2xl font-semibold ${getTextColor('primary')} mb-2`}>Product not found</h2>
+            <p className={`mt-2 ${getTextColor('secondary')} mb-4`}>The product you're looking for doesn't exist.</p>
+            <Button variant="secondary" onClick={() => navigate('/')} className="mt-4">
+              Back to Home
+            </Button>
+          </div>
         </div>
       </div>
     );
