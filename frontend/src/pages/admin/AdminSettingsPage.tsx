@@ -18,6 +18,10 @@ interface FeaturedCountForm {
   featuredCount: number;
 }
 
+interface StoreNameForm {
+  storeName: string;
+}
+
 const AdminSettingsPage = () => {
   const { adminSlug } = useParams<{ adminSlug: string }>();
   const navigate = useNavigate();
