@@ -57,11 +57,19 @@ export const getActiveBannersFirestore = async () => {
   const bannersSnapshot = await getCollection(COLLECTIONS.BANNERS)
     .where('isActive', '==', true)
     .orderBy('order', 'asc')
-    .orderBy('createdAt', 'desc')
     .get();
 
   const banners = snapshotToArray<FirestoreBanner>(bannersSnapshot);
-  return banners.map(toBanner);
+  // Sort by createdAt desc in memory (Firestore doesn't support multiple orderBy without index)
+  const sortedBanners = banners.sort((a, b) => {
+    const aDate = toDate(a.createdAt).getTime();
+    const bDate = toDate(b.createdAt).getTime();
+    if (a.order === b.order) {
+      return bDate - aDate; // Descending by createdAt
+    }
+    return 0; // Already sorted by order
+  });
+  return sortedBanners.map(toBanner);
 };
 
 export const getBannerByIdFirestore = async (id: number) => {
