@@ -117,7 +117,7 @@ node -e "const bcrypt = require('bcrypt'); bcrypt.hash('admin123', 10).then(hash
 **Output** will be something like:
 
 ```
-$2b$10$abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJKLMNOPQRSTUV
+$in
 ```
 
 **Copy this entire hash** (starts with `$2b$10$`).

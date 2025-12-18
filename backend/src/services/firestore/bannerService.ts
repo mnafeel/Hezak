@@ -62,22 +62,42 @@ export const getAllBannersFirestore = async () => {
 };
 
 export const getActiveBannersFirestore = async () => {
-  const bannersSnapshot = await getCollection(COLLECTIONS.BANNERS)
-    .where('isActive', '==', true)
-    .orderBy('order', 'asc')
-    .get();
+  try {
+    // First try with orderBy (requires index)
+    try {
+      const bannersSnapshot = await getCollection(COLLECTIONS.BANNERS)
+        .where('isActive', '==', true)
+        .orderBy('order', 'asc')
+        .get();
 
-  const banners = snapshotToArray<FirestoreBanner>(bannersSnapshot);
-  // Sort by createdAt desc in memory (Firestore doesn't support multiple orderBy without index)
-  const sortedBanners = banners.sort((a, b) => {
-    const aDate = toDate(a.createdAt).getTime();
-    const bDate = toDate(b.createdAt).getTime();
-    if (a.order === b.order) {
-      return bDate - aDate; // Descending by createdAt
+      const banners = snapshotToArray<FirestoreBanner>(bannersSnapshot);
+      return banners.map(toBanner);
+    } catch (error: any) {
+      // If index doesn't exist, fetch all and sort in memory
+      if (error?.code === 9 || error?.message?.includes('index')) {
+        console.log('⚠️ Firestore index not found, fetching all active banners and sorting in memory');
+        const bannersSnapshot = await getCollection(COLLECTIONS.BANNERS)
+          .where('isActive', '==', true)
+          .get();
+
+        const banners = snapshotToArray<FirestoreBanner>(bannersSnapshot);
+        // Sort by order, then by createdAt desc
+        const sortedBanners = banners.sort((a, b) => {
+          if (a.order !== b.order) {
+            return a.order - b.order;
+          }
+          const aDate = toDate(a.createdAt).getTime();
+          const bDate = toDate(b.createdAt).getTime();
+          return bDate - aDate; // Descending by createdAt
+        });
+        return sortedBanners.map(toBanner);
+      }
+      throw error;
     }
-    return 0; // Already sorted by order
-  });
-  return sortedBanners.map(toBanner);
+  } catch (error) {
+    console.error('Error fetching active banners from Firestore:', error);
+    throw error;
+  }
 };
 
 export const getBannerByIdFirestore = async (id: number) => {
