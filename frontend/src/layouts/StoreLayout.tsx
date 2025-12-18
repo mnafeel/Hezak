@@ -309,7 +309,7 @@ const StoreLayout = () => {
           </nav>
         </header>
 
-        {/* Mobile Category Menu - Only show on shop page */}
+        {/* Mobile Category Button - Only show on shop page */}
         {location.pathname === '/shop' && (
           <div className="lg:hidden">
             <button
@@ -318,69 +318,28 @@ const StoreLayout = () => {
               className={`w-full rounded-xl border ${getBorderColor()} px-4 py-3 text-left text-sm font-medium ${getTextColor('primary')} ${getGlassPanelClass()} ${getHoverEffect()}`}
             >
               <div className="flex items-center justify-between">
-                <span>Browse Categories</span>
-                <span className={cn('transition-transform', mobileMenuOpen && 'rotate-180')}>▼</span>
+                <div className="flex items-center gap-2">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  </svg>
+                  <span>Browse Categories</span>
+                </div>
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
               </div>
             </button>
-            {mobileMenuOpen && (
-              <div className={`mt-2 rounded-xl border ${getBorderColor()} p-4 ${getGlassPanelClass()} ${getShadowClass('md')}`}>
-                {categories.length > 0 ? (
-                  <div className="space-y-1 max-h-96 overflow-y-auto">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigate('/shop');
-                        setMobileMenuOpen(false);
-                      }}
-                      className={cn(
-                        'w-full rounded-lg border px-4 py-2.5 text-left text-sm font-medium transition',
-                        location.pathname === '/shop' && !searchParams.get('category')
-                          ? `border-brand-400/50 bg-brand-400/10 ${getTextColor('primary')}`
-                          : `${theme === 'light' ? 'border-gray-300 bg-gray-100' : 'border-white/10 bg-white/5'} ${getTextColor('secondary')} ${theme === 'light' ? 'hover:bg-gray-200 hover:border-gray-400' : 'hover:bg-white/10 hover:border-white/20'}`
-                      )}
-                    >
-                      All Products
-                    </button>
-                    {sortedCategories.map((category) => (
-                      <button
-                        key={category.id}
-                        type="button"
-                        onClick={() => {
-                          navigate(`/shop?category=${category.slug}`);
-                          setMobileMenuOpen(false);
-                        }}
-                        className={cn(
-                          'w-full rounded-lg border px-4 py-2.5 text-left text-sm font-medium transition flex items-center justify-between',
-                          location.pathname === '/shop' && searchParams.get('category') === category.slug
-                            ? category.isTopSelling
-                              ? `border-brand-400 bg-brand-400/20 ${getTextColor('primary')} shadow-lg shadow-brand-400/20`
-                              : `border-brand-400/50 bg-brand-400/10 ${getTextColor('primary')}`
-                            : category.isTopSelling
-                            ? `${theme === 'light' ? 'border-brand-400/30 bg-brand-400/10' : 'border-brand-400/30 bg-brand-400/10'} ${getTextColor('secondary')} hover:bg-brand-400/20 hover:border-brand-400/50`
-                            : `${theme === 'light' ? 'border-gray-300 bg-gray-100' : 'border-white/10 bg-white/5'} ${getTextColor('secondary')} ${theme === 'light' ? 'hover:bg-gray-200 hover:border-gray-400' : 'hover:bg-white/10 hover:border-white/20'}`
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          {category.isTopSelling && <span className="text-xs">🔥</span>}
-                          <span>{category.name}</span>
-                        </div>
-                        <span
-                          className={cn(
-                            'rounded-full px-2 py-0.5 text-xs font-semibold',
-                            category.isTopSelling ? 'bg-white/20 text-white' : 'bg-white/10 text-slate-300'
-                          )}
-                        >
-                          {category.productCount}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                    ) : (
-                      <div className={`text-xs ${getTextColor('tertiary')}`}>Loading categories...</div>
-                    )}
-              </div>
-            )}
           </div>
+        )}
+
+        {/* Mobile Category Sidebar */}
+        {location.pathname === '/shop' && (
+          <CategorySidebarMobile
+            isOpen={mobileMenuOpen}
+            onClose={() => setMobileMenuOpen(false)}
+            categories={categories}
+            selectedCategory={searchParams.get('category')}
+          />
         )}
 
         {/* Main Content Area with Sidebar */}
