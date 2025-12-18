@@ -48,8 +48,18 @@ apiClient.interceptors.request.use((config) => {
     token = userToken;
   } 
   // For GET requests on public endpoints, no token needed
-  else if (method === 'get' && (url.startsWith('/products') || url.startsWith('/categories') || url.startsWith('/banners'))) {
+  // Note: /banners requires admin auth, only /banners/active is public
+  else if (method === 'get' && (
+    url.startsWith('/products') || 
+    url.startsWith('/categories') || 
+    url === '/banners/active' || 
+    url.startsWith('/banners/active')
+  )) {
     token = null; // Public endpoints
+  }
+  // Admin GET requests to /banners (list all banners) require admin token
+  else if (method === 'get' && url.startsWith('/banners') && url !== '/banners/active' && !url.startsWith('/banners/active')) {
+    token = adminToken;
   }
   // For other endpoints, prefer user token, fallback to admin token
   else {
@@ -88,11 +98,12 @@ apiClient.interceptors.response.use(
       const method = error.config?.method?.toLowerCase() || 'get';
       
       // Check if this is an admin endpoint (mutations on products/categories/banners)
+      // Note: GET /banners requires admin auth, but GET /banners/active is public
       const isAdminEndpoint = 
         url.startsWith('/admin/') ||
         (url.startsWith('/products') && (method === 'post' || method === 'put' || method === 'delete')) ||
         (url.startsWith('/categories') && (method === 'post' || method === 'put' || method === 'delete')) ||
-        (url.startsWith('/banners') && (method === 'post' || method === 'put' || method === 'delete')) ||
+        ((url.startsWith('/banners') && url !== '/banners/active' && !url.startsWith('/banners/active')) && (method === 'get' || method === 'post' || method === 'put' || method === 'delete')) ||
         (url.startsWith('/upload/') && method === 'post') ||
         (url.startsWith('/settings/') && (method === 'put' || method === 'post'));
       
@@ -122,7 +133,13 @@ apiClient.interceptors.response.use(
       } else {
         // For other endpoints, clear both (fallback)
         // But don't clear if it's a public GET endpoint that might return 401
-        const isPublicGet = method === 'get' && (url.startsWith('/products') || url.startsWith('/categories') || url.startsWith('/banners'));
+        // Note: /banners requires admin auth, only /banners/active is public
+        const isPublicGet = method === 'get' && (
+          url.startsWith('/products') || 
+          url.startsWith('/categories') || 
+          url === '/banners/active' || 
+          url.startsWith('/banners/active')
+        );
         
         if (!isPublicGet) {
           useAdminAuthStore.getState().clearAuth();
