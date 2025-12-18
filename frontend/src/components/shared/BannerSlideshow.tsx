@@ -31,13 +31,6 @@ const BannerSlideshow = () => {
       </div>
     );
   }
-  
-  // Get aspect ratio classes based on mobileAspectRatio setting (will be set after currentBanner is available)
-  const getAspectRatioClasses = (mobileRatio?: string | null) => {
-    const ratio = mobileRatio || '4/3';
-    const mobileClass = ratio === '4/3' ? 'aspect-[4/3]' : ratio === '16/9' ? 'aspect-[16/9]' : 'aspect-[21/9]';
-    return `${mobileClass} sm:aspect-[16/9] md:aspect-[21/9]`;
-  };
 
   if (banners.length === 0) {
     return null;
