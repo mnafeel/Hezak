@@ -32,7 +32,8 @@ const emptyBanner: BannerForm = {
   textPosition: 'bottom-left',
   textAlign: 'left',
   animationStyle: 'fade',
-  overlayStyle: 'gradient'
+  overlayStyle: 'gradient',
+  mobileAspectRatio: '4/3' // Default to 4/3 for mobile
 };
 
 const AdminBannersPage = () => {
@@ -196,7 +197,8 @@ const AdminBannersPage = () => {
         textPosition: values.textPosition || null,
         textAlign: values.textAlign || null,
         animationStyle: values.animationStyle || null,
-        overlayStyle: values.overlayStyle || null
+        overlayStyle: values.overlayStyle || null,
+        mobileAspectRatio: values.mobileAspectRatio || '4/3'
       };
 
       if (editingBannerId) {
@@ -231,7 +233,8 @@ const AdminBannersPage = () => {
       textPosition: banner.textPosition || 'bottom-left',
       textAlign: banner.textAlign || 'left',
       animationStyle: banner.animationStyle || 'fade',
-      overlayStyle: banner.overlayStyle || 'gradient'
+      overlayStyle: banner.overlayStyle || 'gradient',
+      mobileAspectRatio: banner.mobileAspectRatio || '4/3'
     });
   };
 
@@ -249,7 +252,8 @@ const AdminBannersPage = () => {
       textPosition: banner.textPosition || 'bottom-left',
       textAlign: banner.textAlign || 'left',
       animationStyle: banner.animationStyle || 'fade',
-      overlayStyle: banner.overlayStyle || 'gradient'
+      overlayStyle: banner.overlayStyle || 'gradient',
+      mobileAspectRatio: banner.mobileAspectRatio || '4/3'
     });
   };
 
@@ -409,7 +413,8 @@ const AdminBannersPage = () => {
         textPosition: values.textPosition || null,
         textAlign: values.textAlign || null,
         animationStyle: values.animationStyle || null,
-        overlayStyle: values.overlayStyle || null
+        overlayStyle: values.overlayStyle || null,
+        mobileAspectRatio: values.mobileAspectRatio || '4/3'
       };
 
       await updateMutation({ id: textEditingBannerId, data: payload });

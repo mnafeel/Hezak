@@ -74,6 +74,7 @@ export const bannerCreateSchema = z.object({
   textAlign: z.enum(['left', 'center', 'right']).optional().nullable(),
   animationStyle: z.enum(['fade', 'slide', 'zoom', 'none']).optional().nullable(),
   overlayStyle: z.enum(['gradient', 'solid', 'blur', 'none']).optional().nullable(),
+  mobileAspectRatio: z.enum(['4/3', '16/9', '21/9']).optional().nullable(),
   textElements: z.array(bannerElementSchema).optional()
 }).refine((data) => {
   // Either imageUrl must be provided, or if mediaType is video, videoUrl must be provided
@@ -119,6 +120,7 @@ export const bannerUpdateSchema = z.object({
   textAlign: z.enum(['left', 'center', 'right']).optional().nullable(),
   animationStyle: z.enum(['fade', 'slide', 'zoom', 'none']).optional().nullable(),
   overlayStyle: z.enum(['gradient', 'solid', 'blur', 'none']).optional().nullable(),
+  mobileAspectRatio: z.enum(['4/3', '16/9', '21/9']).optional().nullable(),
   textElements: z.array(bannerElementSchema).optional()
 }).refine((data) => {
   // If mediaType is video, videoUrl must be provided. Otherwise, imageUrl must be provided.

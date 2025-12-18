@@ -31,6 +31,13 @@ const BannerSlideshow = () => {
       </div>
     );
   }
+  
+  // Get aspect ratio classes based on mobileAspectRatio setting (will be set after currentBanner is available)
+  const getAspectRatioClasses = (mobileRatio?: string | null) => {
+    const ratio = mobileRatio || '4/3';
+    const mobileClass = ratio === '4/3' ? 'aspect-[4/3]' : ratio === '16/9' ? 'aspect-[16/9]' : 'aspect-[21/9]';
+    return `${mobileClass} sm:aspect-[16/9] md:aspect-[21/9]`;
+  };
 
   if (banners.length === 0) {
     return null;
@@ -41,6 +48,13 @@ const BannerSlideshow = () => {
   const textAlign = currentBanner.textAlign || 'left';
   const animationStyle = currentBanner.animationStyle || 'fade';
   const overlayStyle = currentBanner.overlayStyle || 'gradient';
+  const mobileAspectRatio = currentBanner.mobileAspectRatio || '4/3';
+  
+  // Get aspect ratio classes based on mobileAspectRatio setting
+  const getAspectRatioClasses = () => {
+    const mobileRatio = mobileAspectRatio === '4/3' ? 'aspect-[4/3]' : mobileAspectRatio === '16/9' ? 'aspect-[16/9]' : 'aspect-[21/9]';
+    return `${mobileRatio} sm:aspect-[16/9] md:aspect-[21/9]`;
+  };
 
   const getAnimationProps = () => {
     switch (animationStyle) {
@@ -111,8 +125,15 @@ const BannerSlideshow = () => {
     setCurrentIndex((prev) => (prev + 1) % banners.length);
   };
 
+  const currentBanner = banners[currentIndex];
+  const textPosition = currentBanner.textPosition || 'bottom-left';
+  const textAlign = currentBanner.textAlign || 'left';
+  const animationStyle = currentBanner.animationStyle || 'fade';
+  const overlayStyle = currentBanner.overlayStyle || 'gradient';
+  const mobileAspectRatio = currentBanner.mobileAspectRatio || '4/3';
+
   return (
-    <div className="relative w-full aspect-[4/3] sm:aspect-[16/9] md:aspect-[21/9] rounded-3xl overflow-hidden">
+    <div className={`relative w-full ${getAspectRatioClasses(mobileAspectRatio)} rounded-3xl overflow-hidden`}>
       <AnimatePresence mode="wait">
         <motion.div
           key={currentBanner.id}

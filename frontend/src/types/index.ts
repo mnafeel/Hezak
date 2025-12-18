@@ -163,6 +163,7 @@ export interface Banner {
   textAlign: 'left' | 'center' | 'right' | null;
   animationStyle: 'fade' | 'slide' | 'zoom' | 'none' | null;
   overlayStyle: 'gradient' | 'solid' | 'blur' | 'none' | null;
+  mobileAspectRatio?: '4/3' | '16/9' | '21/9' | null; // Mobile aspect ratio option
   textElements: BannerElement[]; // Can contain both text and image elements
   createdAt: string;
   updatedAt: string;
@@ -181,6 +182,7 @@ export interface BannerFormPayload {
   textAlign?: 'left' | 'center' | 'right' | null;
   animationStyle?: 'fade' | 'slide' | 'zoom' | 'none' | null;
   overlayStyle?: 'gradient' | 'solid' | 'blur' | 'none' | null;
+  mobileAspectRatio?: '4/3' | '16/9' | '21/9' | null; // Mobile aspect ratio option
   textElements?: BannerElement[];
 }
 
