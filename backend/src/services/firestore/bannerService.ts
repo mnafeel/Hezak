@@ -97,6 +97,8 @@ export const getAllBannersFirestore = async () => {
 
 export const getActiveBannersFirestore = async () => {
   try {
+    console.log('📋 Fetching active banners from Firestore...');
+    
     // First try with orderBy (requires index)
     try {
       const bannersSnapshot = await getCollection(COLLECTIONS.BANNERS)
@@ -104,8 +106,11 @@ export const getActiveBannersFirestore = async () => {
         .orderBy('order', 'asc')
         .get();
 
+      console.log(`✅ Found ${bannersSnapshot.size} active banners with orderBy query`);
       const banners = snapshotToArray<FirestoreBanner>(bannersSnapshot);
-      return banners.map(toBanner);
+      const result = banners.map(toBanner);
+      console.log(`✅ Returning ${result.length} active banners`);
+      return result;
     } catch (error: any) {
       // If index doesn't exist, fetch all and sort in memory
       if (error?.code === 9 || error?.message?.includes('index')) {
@@ -114,6 +119,7 @@ export const getActiveBannersFirestore = async () => {
           .where('isActive', '==', true)
           .get();
 
+        console.log(`✅ Found ${bannersSnapshot.size} active banners without orderBy query`);
         const banners = snapshotToArray<FirestoreBanner>(bannersSnapshot);
         // Sort by order, then by createdAt desc
         const sortedBanners = banners.sort((a, b) => {
@@ -124,12 +130,14 @@ export const getActiveBannersFirestore = async () => {
           const bDate = toDate(b.createdAt).getTime();
           return bDate - aDate; // Descending by createdAt
         });
-        return sortedBanners.map(toBanner);
+        const result = sortedBanners.map(toBanner);
+        console.log(`✅ Returning ${result.length} active banners`);
+        return result;
       }
       throw error;
     }
   } catch (error) {
-    console.error('Error fetching active banners from Firestore:', error);
+    console.error('❌ Error fetching active banners from Firestore:', error);
     throw error;
   }
 };
