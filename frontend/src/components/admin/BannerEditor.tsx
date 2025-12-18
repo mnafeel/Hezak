@@ -31,7 +31,10 @@ const BannerEditor = ({
   const [products, setProducts] = useState<Product[]>([]);
   const [showProductSelector, setShowProductSelector] = useState(false);
   const [productSearchTerm, setProductSearchTerm] = useState('');
+  const [previewMode, setPreviewMode] = useState<'mobile' | 'desktop'>('desktop');
+  const [mobileImageUrl, setMobileImageUrl] = useState<string>('');
   const containerRef = useRef<HTMLDivElement>(null);
+  const mobileContainerRef = useRef<HTMLDivElement>(null);
   const selectedElement = textElements.find(el => el.id === selectedElementId);
   
   // Load products for product linking
@@ -285,15 +288,98 @@ const BannerEditor = ({
             </Button>
           </div>
         </div>
-        <div
-          ref={containerRef}
-          className="relative flex-1 aspect-[21/9] w-full rounded-2xl border-2 border-white/20 bg-slate-900 overflow-hidden"
-          onClick={(e) => {
-            if (e.target === containerRef.current) {
-              setSelectedElementId(null);
-            }
-          }}
-        >
+        
+        {/* Preview Mode Toggle */}
+        <div className="flex items-center gap-3 mb-4">
+          <span className="text-sm font-medium text-slate-300">Preview Mode:</span>
+          <div className="flex gap-2 rounded-xl bg-white/5 p-1 border border-white/10">
+            <button
+              type="button"
+              onClick={() => setPreviewMode('mobile')}
+              className={cn(
+                'px-4 py-2 rounded-lg text-sm font-medium transition',
+                previewMode === 'mobile'
+                  ? 'bg-brand-500 text-white'
+                  : 'text-slate-300 hover:text-white hover:bg-white/5'
+              )}
+            >
+              📱 Mobile
+            </button>
+            <button
+              type="button"
+              onClick={() => setPreviewMode('desktop')}
+              className={cn(
+                'px-4 py-2 rounded-lg text-sm font-medium transition',
+                previewMode === 'desktop'
+                  ? 'bg-brand-500 text-white'
+                  : 'text-slate-300 hover:text-white hover:bg-white/5'
+              )}
+            >
+              💻 Desktop
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Image Upload */}
+        {previewMode === 'mobile' && (
+          <div className="mb-4 p-4 rounded-xl bg-purple-500/10 border border-purple-500/30">
+            <label className="block text-sm font-medium text-purple-200 mb-2">
+              📱 Mobile Background Image (Optional - uses desktop image if not set)
+            </label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={async () => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/*';
+                  input.onchange = async (e) => {
+                    const file = (e.target as HTMLInputElement).files?.[0];
+                    if (file) {
+                      try {
+                        const response = await uploadImage(file);
+                        setMobileImageUrl(response.url);
+                        toast.success('Mobile image uploaded!');
+                      } catch (error) {
+                        toast.error('Failed to upload image');
+                        console.error('Failed to upload file:', error);
+                      }
+                    }
+                  };
+                  input.click();
+                }}
+                className="bg-purple-500/20 text-purple-200 hover:bg-purple-500/30"
+              >
+                {mobileImageUrl ? '🔄 Replace Mobile Image' : '📤 Upload Mobile Image'}
+              </Button>
+              {mobileImageUrl && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setMobileImageUrl('')}
+                  className="hover:bg-red-500/20 hover:text-red-300"
+                >
+                  🗑️ Remove
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Desktop Preview */}
+        {previewMode === 'desktop' && (
+          <div
+            ref={containerRef}
+            className="relative flex-1 aspect-[21/9] w-full rounded-2xl border-2 border-white/20 bg-slate-900 overflow-hidden"
+            onClick={(e) => {
+              if (e.target === containerRef.current) {
+                setSelectedElementId(null);
+              }
+            }}
+          >
           {imageUrl ? (
             <>
               {(mediaType === 'video' || imageUrl.match(/\.(mp4|webm|ogg|mov)$/i) || imageUrl.includes('video')) ? (
@@ -526,6 +612,172 @@ const BannerEditor = ({
             </div>
           )}
         </div>
+        )}
+
+        {/* Mobile Preview */}
+        {previewMode === 'mobile' && (
+          <div
+            ref={mobileContainerRef}
+            className="relative flex-1 aspect-[4/3] w-full max-w-md mx-auto rounded-2xl border-2 border-white/20 bg-slate-900 overflow-hidden"
+            onClick={(e) => {
+              if (e.target === mobileContainerRef.current) {
+                setSelectedElementId(null);
+              }
+            }}
+          >
+            {(mobileImageUrl || imageUrl) ? (
+              <>
+                <img
+                  src={mobileImageUrl || imageUrl}
+                  alt="Mobile Banner"
+                  className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+                  draggable={false}
+                />
+                {/* Text and Image Elements - Same elements but in mobile aspect ratio */}
+                {textElements.map((element) => {
+                  const animation = element.animation || 'fade';
+                  const delay = element.animationDelay || 0;
+                  const duration = element.animationDuration || 0.5;
+                  
+                  const getAnimationProps = () => {
+                    switch (animation) {
+                      case 'slide':
+                        return {
+                          initial: { opacity: 0, x: -50 },
+                          animate: { opacity: 1, x: 0 },
+                          transition: { delay, duration }
+                        };
+                      case 'zoom':
+                        return {
+                          initial: { opacity: 0, scale: 0.5 },
+                          animate: { opacity: 1, scale: 1 },
+                          transition: { delay, duration }
+                        };
+                      case 'bounce':
+                        return {
+                          initial: { opacity: 0, y: -50 },
+                          animate: { opacity: 1, y: 0 },
+                          transition: { delay, duration, type: 'spring', stiffness: 200 }
+                        };
+                      case 'pulse':
+                        return {
+                          animate: { 
+                            opacity: [1, 0.7, 1],
+                            scale: [1, 1.05, 1]
+                          },
+                          transition: { delay, duration: duration * 2, repeat: Infinity }
+                        };
+                      case 'none':
+                        return {
+                          initial: { opacity: 1 },
+                          animate: { opacity: 1 }
+                        };
+                      default: // fade
+                        return {
+                          initial: { opacity: 0 },
+                          animate: { opacity: 1 },
+                          transition: { delay, duration }
+                        };
+                    }
+                  };
+
+                  // Render text element
+                  if (element.type === 'text') {
+                    return (
+                      <div
+                        key={element.id}
+                        className={cn(
+                          "absolute transform -translate-x-1/2 -translate-y-1/2 cursor-move select-none z-10",
+                          selectedElementId === element.id && "ring-2 ring-brand-400 ring-offset-2 rounded-lg z-20",
+                          isDragging === element.id && "z-30"
+                        )}
+                        style={{
+                          left: `${element.x}%`,
+                          top: `${element.y}%`,
+                          fontFamily: element.fontFamily,
+                          fontSize: `${Math.max(12, element.fontSize * 0.7)}px`, // Scale down for mobile
+                          fontWeight: element.fontWeight,
+                          color: element.color || '#FFFFFF',
+                          textAlign: element.textAlign,
+                          textShadow: element.textShadow || '2px 2px 8px rgba(0,0,0,0.8)',
+                          letterSpacing: `${element.letterSpacing || 0}px`,
+                          lineHeight: element.lineHeight || 1.2,
+                          maxWidth: '80%',
+                          padding: selectedElementId === element.id ? '8px' : '4px',
+                          pointerEvents: 'auto',
+                          userSelect: 'none',
+                          WebkitUserSelect: 'none',
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleMouseDown(e, element.id);
+                        }}
+                      >
+                        <motion.span
+                          {...getAnimationProps()}
+                          style={{ display: 'block' }}
+                        >
+                          {element.content || 'Empty Text'}
+                        </motion.span>
+                      </div>
+                    );
+                  }
+
+                  // Render image element
+                  if (element.type === 'image') {
+                    return (
+                      <div
+                        key={element.id}
+                        className={cn(
+                          "absolute transform -translate-x-1/2 -translate-y-1/2 cursor-move select-none z-10",
+                          selectedElementId === element.id && "ring-2 ring-purple-400 ring-offset-2 rounded-lg z-20",
+                          isDragging === element.id && "z-30"
+                        )}
+                        style={{
+                          left: `${element.x}%`,
+                          top: `${element.y}%`,
+                          width: `${element.width}%`,
+                          height: element.height ? `${element.height}%` : 'auto',
+                          padding: selectedElementId === element.id ? '4px' : '2px',
+                          pointerEvents: 'auto',
+                          userSelect: 'none',
+                          WebkitUserSelect: 'none',
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleMouseDown(e, element.id);
+                        }}
+                      >
+                        <motion.div
+                          {...getAnimationProps()}
+                          className="relative w-full h-full"
+                        >
+                          <img
+                            src={element.imageUrl}
+                            alt="Banner element"
+                            className="w-full h-full object-contain rounded-lg shadow-lg"
+                            style={{
+                              border: selectedElementId === element.id ? '2px solid rgb(196, 181, 253)' : '2px solid transparent'
+                            }}
+                            draggable={false}
+                          />
+                        </motion.div>
+                      </div>
+                    );
+                  }
+
+                  return null;
+                })}
+              </>
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-400 gap-4">
+                <p className="text-lg">Upload an image to preview mobile view</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Text Elements List & Editor */}
