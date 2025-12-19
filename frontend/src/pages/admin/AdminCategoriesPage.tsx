@@ -412,16 +412,20 @@ const AdminCategoriesPage = () => {
                                     if (otherCategories.length > 0) {
                                       if (isInCurrentCategory) {
                                         // Product is in this category AND other categories
+                                        const categoryNames = otherCategories.slice(0, 2).join(', ');
+                                        const moreCount = otherCategories.length > 2 ? otherCategories.length - 2 : 0;
                                         return (
                                           <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-amber-200">
-                                            In this and {otherCategories.length} other{otherCategories.length > 1 ? 's' : ''}
+                                            In this and {categoryNames}{moreCount > 0 ? ` +${moreCount}` : ''}
                                           </span>
                                         );
                                       } else {
                                         // Product is only in other categories
+                                        const categoryNames = otherCategories.slice(0, 2).join(', ');
+                                        const moreCount = otherCategories.length > 2 ? otherCategories.length - 2 : 0;
                                         return (
                                           <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-red-200">
-                                            Currently in {otherCategories[0]}{otherCategories.length > 1 ? ` +${otherCategories.length - 1}` : ''}
+                                            In {categoryNames}{moreCount > 0 ? ` +${moreCount}` : ''}
                                           </span>
                                         );
                                       }
