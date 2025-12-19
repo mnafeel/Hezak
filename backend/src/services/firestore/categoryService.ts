@@ -20,8 +20,13 @@ const toCategory = async (firestoreCategory: FirestoreCategory, includeProducts 
   let products: any[] = [];
   let productCount = 0;
 
-  if (includeProducts && firestoreCategory.productIds && firestoreCategory.productIds.length > 0) {
-    const productPromises = firestoreCategory.productIds.map(async (productId) => {
+  // Get unique, valid product IDs
+  const uniqueProductIds = firestoreCategory.productIds 
+    ? [...new Set(firestoreCategory.productIds.filter(id => id && id.trim() !== ''))]
+    : [];
+
+  if (includeProducts && uniqueProductIds.length > 0) {
+    const productPromises = uniqueProductIds.map(async (productId) => {
       const productDoc = await getCollection(COLLECTIONS.PRODUCTS).doc(productId).get();
       if (productDoc.exists) {
         const productData = productDoc.data();
@@ -36,10 +41,16 @@ const toCategory = async (firestoreCategory: FirestoreCategory, includeProducts 
     
     const productResults = await Promise.all(productPromises);
     products = productResults.filter((p): p is any => p !== null);
-  }
-
-  if (!includeProducts && firestoreCategory.productIds) {
-    productCount = firestoreCategory.productIds.length;
+    productCount = products.length;
+  } else if (!includeProducts && uniqueProductIds.length > 0) {
+    // Verify products exist and count only valid ones
+    const productExistencePromises = uniqueProductIds.map(async (productId) => {
+      const productDoc = await getCollection(COLLECTIONS.PRODUCTS).doc(productId).get();
+      return productDoc.exists;
+    });
+    
+    const productExistenceResults = await Promise.all(productExistencePromises);
+    productCount = productExistenceResults.filter(exists => exists).length;
   }
 
   return {
@@ -51,9 +62,9 @@ const toCategory = async (firestoreCategory: FirestoreCategory, includeProducts 
     isFeatured: firestoreCategory.isFeatured || false,
     createdAt: toDate(firestoreCategory.createdAt),
     updatedAt: toDate(firestoreCategory.updatedAt),
-    productCount: includeProducts ? products.length : productCount,
+    productCount,
     products: includeProducts ? products : undefined,
-    _count: { products: includeProducts ? products.length : productCount }
+    _count: { products: productCount }
   };
 };
 
@@ -215,25 +226,61 @@ export const updateCategory = async (id: number, input: UpdateCategoryInput) => 
 
 export const deleteCategory = async (id: number) => {
   try {
-    await getCollection(COLLECTIONS.CATEGORIES).doc(String(id)).delete();
+    const categoryIdString = String(id);
     
-    // Also remove category from all products
+    // Get the category to find its products
+    const categoryDoc = await getCollection(COLLECTIONS.CATEGORIES).doc(categoryIdString).get();
+    if (!categoryDoc.exists) {
+      throw new Error('Category not found');
+    }
+    
+    const categoryData = categoryDoc.data() as FirestoreCategory;
+    const productIds = categoryData?.productIds || [];
+    
+    // Get all products to check which ones belong ONLY to this category
     const productsSnapshot = await getCollection(COLLECTIONS.PRODUCTS).get();
     const { db } = await import('../../utils/firebaseAdmin');
     if (!db) throw new Error('Firestore not initialized');
+    
     const batch = db.batch();
+    const productsToDelete: any[] = [];
+    const productsToUpdate: any[] = [];
     
     productsSnapshot.docs.forEach((doc) => {
       const productData = doc.data() as any;
-      if (productData.categoryIds && Array.isArray(productData.categoryIds)) {
-        const updatedCategoryIds = productData.categoryIds.filter((catId: string) => catId !== String(id));
-        if (updatedCategoryIds.length !== productData.categoryIds.length) {
-          batch.update(doc.ref, { categoryIds: updatedCategoryIds });
+      const productCategoryIds = (productData.categoryIds || []) as string[];
+      
+      // Check if product belongs to this category
+      if (productCategoryIds.includes(categoryIdString)) {
+        // Remove category from product's categoryIds
+        const updatedCategoryIds = productCategoryIds.filter((catId: string) => catId !== categoryIdString);
+        
+        // If product belongs ONLY to this category (or has no other categories), delete it
+        if (updatedCategoryIds.length === 0) {
+          productsToDelete.push(doc.ref);
+        } else {
+          // Otherwise, just remove the category reference
+          productsToUpdate.push({ ref: doc.ref, categoryIds: updatedCategoryIds });
         }
       }
     });
     
+    // Delete products that belong only to this category
+    productsToDelete.forEach((ref) => {
+      batch.delete(ref);
+    });
+    
+    // Update products to remove category reference
+    productsToUpdate.forEach(({ ref, categoryIds }) => {
+      batch.update(ref, { categoryIds });
+    });
+    
+    // Delete the category itself
+    batch.delete(getCollection(COLLECTIONS.CATEGORIES).doc(categoryIdString));
+    
     await batch.commit();
+    
+    console.log(`Deleted category ${id} and ${productsToDelete.length} associated product(s)`);
   } catch (error) {
     console.error('Error in deleteCategory:', error);
     throw error;

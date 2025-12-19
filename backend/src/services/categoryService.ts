@@ -171,8 +171,57 @@ export const updateCategory = async (
 };
 
 export const deleteCategory = async (id: number): Promise<void> => {
-  await prisma.category.delete({
-    where: { id }
+  await prisma.$transaction(async (tx) => {
+    // Find products that belong ONLY to this category
+    const productsInCategory = await tx.productCategory.findMany({
+      where: { categoryId: id },
+      include: {
+        product: {
+          include: {
+            categories: true
+          }
+        }
+      }
+    });
+    
+    // Find products that belong only to this category
+    const productsToDelete = productsInCategory
+      .filter(pc => pc.product.categories.length === 1) // Only belongs to this category
+      .map(pc => pc.productId);
+    
+    // Delete products that belong only to this category
+    if (productsToDelete.length > 0) {
+      // First delete order items for these products
+      await tx.orderItem.deleteMany({
+        where: {
+          productId: { in: productsToDelete }
+        }
+      });
+      
+      // Delete product categories
+      await tx.productCategory.deleteMany({
+        where: {
+          productId: { in: productsToDelete }
+        }
+      });
+      
+      // Delete the products
+      await tx.product.deleteMany({
+        where: {
+          id: { in: productsToDelete }
+        }
+      });
+    }
+    
+    // Remove category from products that belong to multiple categories
+    await tx.productCategory.deleteMany({
+      where: { categoryId: id }
+    });
+    
+    // Delete the category
+    await tx.category.delete({
+      where: { id }
+    });
   });
 };
 
