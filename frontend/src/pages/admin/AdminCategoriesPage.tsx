@@ -383,11 +383,51 @@ const AdminCategoriesPage = () => {
                                       {product.itemType}
                                     </span>
                                   )}
-                                  {product.category && product.category.id !== category.id && (
-                                    <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-red-200">
-                                      Currently in {product.category.name}
-                                    </span>
-                                  )}
+                                  {(() => {
+                                    // Check if product is in other categories
+                                    const otherCategories: string[] = [];
+                                    
+                                    // Check single category
+                                    if (product.category && product.category.id !== category.id) {
+                                      otherCategories.push(product.category.name);
+                                    }
+                                    
+                                    // Check categories array
+                                    if (product.categories && Array.isArray(product.categories)) {
+                                      product.categories.forEach((pc) => {
+                                        const catId = pc.categoryId || pc.category?.id || pc.id;
+                                        if (catId && catId !== category.id) {
+                                          const catName = pc.category?.name || categories.find(c => c.id === catId)?.name;
+                                          if (catName && !otherCategories.includes(catName)) {
+                                            otherCategories.push(catName);
+                                          }
+                                        }
+                                      });
+                                    }
+                                    
+                                    // Also check if product is in the current category's product list
+                                    const isInCurrentCategory = assignedProductIds.includes(product.id) || 
+                                      category.products?.some(p => p.id === product.id);
+                                    
+                                    if (otherCategories.length > 0) {
+                                      if (isInCurrentCategory) {
+                                        // Product is in this category AND other categories
+                                        return (
+                                          <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-amber-200">
+                                            In this and {otherCategories.length} other{otherCategories.length > 1 ? 's' : ''}
+                                          </span>
+                                        );
+                                      } else {
+                                        // Product is only in other categories
+                                        return (
+                                          <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-red-200">
+                                            Currently in {otherCategories[0]}{otherCategories.length > 1 ? ` +${otherCategories.length - 1}` : ''}
+                                          </span>
+                                        );
+                                      }
+                                    }
+                                    return null;
+                                  })()}
                                 </div>
                               </div>
                             </label>
