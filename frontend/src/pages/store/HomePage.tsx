@@ -33,9 +33,9 @@ const HomePage = () => {
       .filter((cat) => cat.isTopSelling)
       .map((cat) => String(cat.id));
     
-    // If no top selling categories, show all products
+    // If no top selling categories set, return empty array (admin must set categories)
     if (topSellingCategoryIds.length === 0) {
-      return allProducts.slice(0, 8);
+      return [];
     }
     
     const productsFromCategories = allProducts.filter(
@@ -54,10 +54,8 @@ const HomePage = () => {
       }
     );
     
-    // If no products from top selling categories, show all products as fallback
-    return productsFromCategories.length > 0 
-      ? productsFromCategories.slice(0, 8)
-      : allProducts.slice(0, 8);
+    // Return products from top selling categories (no fallback to all products)
+    return productsFromCategories.slice(0, 8);
   }, [allProducts, categories]);
 
   const featuredProducts = useMemo<Product[]>(() => {
@@ -67,9 +65,9 @@ const HomePage = () => {
       .filter((cat) => cat.isFeatured)
       .map((cat) => String(cat.id));
     
-    // If no featured categories, show all products
+    // If no featured categories set, return empty array (admin must set categories)
     if (featuredCategoryIds.length === 0) {
-      return allProducts.slice(0, featuredCount ?? 8);
+      return [];
     }
     
     const productsFromCategories = allProducts.filter(
@@ -88,10 +86,8 @@ const HomePage = () => {
       }
     );
     
-    // If no products from featured categories, show all products as fallback
-    return productsFromCategories.length > 0 
-      ? productsFromCategories.slice(0, featuredCount ?? 8)
-      : allProducts.slice(0, featuredCount ?? 8);
+    // Return products from featured categories (no fallback to all products)
+    return productsFromCategories.slice(0, featuredCount ?? 8);
   }, [allProducts, categories, featuredCount]);
 
   const handleExplore = () => {

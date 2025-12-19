@@ -70,7 +70,7 @@ const ShopPage = () => {
         .map((cat) => String(cat.id));
       
       if (topSellingCategoryIds.length === 0) {
-        return allProducts; // Show all if no top selling categories
+        return []; // Return empty if no top selling categories set
       }
       
       return allProducts.filter((product) => {
@@ -94,7 +94,7 @@ const ShopPage = () => {
         .map((cat) => String(cat.id));
       
       if (featuredCategoryIds.length === 0) {
-        return allProducts; // Show all if no featured categories
+        return []; // Return empty if no featured categories set
       }
       
       return allProducts.filter((product) => {
