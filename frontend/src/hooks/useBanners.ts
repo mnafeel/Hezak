@@ -6,17 +6,15 @@ export const useBanners = () => {
   return useQuery<Banner[]>({
     queryKey: ['admin', 'banners'],
     queryFn: async () => {
-      console.log('🔄 Fetching banners from API...');
       const data = await fetchBanners();
-      console.log('✅ Banners fetched:', { count: Array.isArray(data) ? data.length : 0, data });
       return Array.isArray(data) ? data : [];
     },
-    retry: 3,
+    retry: 2,
     retryDelay: 1000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true, // Always refetch when component mounts
-    staleTime: 0, // Always consider data stale - refetch immediately
-    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes (formerly cacheTime)
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchOnMount: false, // Use cached data if available
+    staleTime: 60 * 1000, // Consider data fresh for 60 seconds
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
     initialData: []
   });
 };
@@ -25,17 +23,15 @@ export const useActiveBanners = () => {
   return useQuery<Banner[]>({
     queryKey: ['banners', 'active'],
     queryFn: async () => {
-      console.log('🔄 Fetching active banners from API...');
       const data = await fetchActiveBanners();
-      console.log('✅ Active banners fetched:', { count: Array.isArray(data) ? data.length : 0, data });
       return Array.isArray(data) ? data : [];
     },
-    retry: 3,
+    retry: 2,
     retryDelay: 1000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: true, // Always refetch when component mounts
-    staleTime: 0, // Always consider data stale - refetch immediately
-    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes (formerly cacheTime)
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    refetchOnMount: false, // Use cached data if available (faster loading)
+    staleTime: 60 * 1000, // Consider data fresh for 60 seconds
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
     initialData: []
   });
 };

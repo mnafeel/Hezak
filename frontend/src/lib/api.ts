@@ -17,33 +17,15 @@ import type {
 export const fetchProducts = async (category?: string): Promise<Product[]> => {
   const url = '/products';
   const params = category ? { category } : undefined;
-  const fullUrl = `${apiClient.defaults.baseURL}${url}${params ? `?category=${params.category}` : ''}`;
-  
-  console.log('🌐 fetchProducts CALLED:', { 
-    url, 
-    category, 
-    params,
-    baseURL: apiClient.defaults.baseURL,
-    fullUrl,
-    timestamp: new Date().toISOString(),
-    stackTrace: new Error().stack
-  });
   
   try {
     let response;
     try {
-      console.log('📡 fetchProducts: Making API request...', { fullUrl });
       response = await apiClient.get<Product[]>(url, { params });
-      console.log('✅ fetchProducts: API call successful', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: response.headers,
-        dataType: typeof response.data,
-        isArray: Array.isArray(response.data),
-        dataLength: Array.isArray(response.data) ? response.data.length : 'not array'
-      });
     } catch (apiError) {
-      console.error('❌ fetchProducts: API call failed:', apiError);
+      if (import.meta.env.DEV) {
+        console.error('Error fetching products:', apiError);
+      }
       if (apiError && typeof apiError === 'object' && 'response' in apiError) {
         const axiosError = apiError as any;
         console.error('API Error Details:', {
@@ -70,78 +52,31 @@ export const fetchProducts = async (category?: string): Promise<Product[]> => {
     
     const data = response.data;
     
-    console.log('📥 fetchProducts response received:', { 
-      category, 
-      status: response.status,
-      statusText: response.statusText,
-      dataLength: Array.isArray(data) ? data.length : 'not array',
-      dataType: typeof data,
-      isArray: Array.isArray(data),
-      rawData: data,
-      firstItem: Array.isArray(data) && data.length > 0 ? { 
-        id: data[0].id, 
-        name: data[0].name,
-        hasCategory: !!data[0].category,
-        categoryId: data[0].category?.id,
-        categoryIdType: typeof data[0].category?.id,
-        categoriesCount: Array.isArray(data[0].categories) ? data[0].categories.length : 0,
-        fullProduct: data[0]
-      } : null,
-      fullResponse: Array.isArray(data) && data.length > 0 ? data.slice(0, 2) : data
-    });
-    
     if (!Array.isArray(data)) {
-      console.warn('⚠️ fetchProducts: response.data is not an array:', {
-        data,
-        dataType: typeof data,
-        constructor: data && typeof data === 'object' && 'constructor' in data ? (data as any).constructor?.name : 'unknown'
-      });
+      if (import.meta.env.DEV) {
+        console.warn('fetchProducts: response.data is not an array');
+      }
       return [];
     }
     
     // Validate products before returning
     const validProducts = data.filter((product): product is Product => {
-      // Check if product exists and has required fields
-      if (!product) {
-        console.warn('⚠️ Invalid product filtered out: null/undefined');
-        return false;
-      }
+      if (!product) return false;
       
-      // Check ID - can be number or string that can be converted to number
       const productId = typeof product.id === 'string' ? parseInt(product.id) : product.id;
       if (!productId || (typeof productId === 'number' && (isNaN(productId) || productId <= 0))) {
-        console.warn('⚠️ Invalid product filtered out: invalid ID', { id: product.id, productId });
         return false;
       }
       
-      // Check name
       if (!product.name || typeof product.name !== 'string' || product.name.trim() === '') {
-        console.warn('⚠️ Invalid product filtered out: invalid name', { id: product.id, name: product.name });
         return false;
       }
       
       return true;
     });
     
-    if (validProducts.length !== data.length) {
-      console.warn(`⚠️ Filtered out ${data.length - validProducts.length} invalid products`);
-    }
-    
-    console.log('✅ fetchProducts returning:', {
-      total: validProducts.length,
-      originalCount: data.length,
-      filteredOut: data.length - validProducts.length,
-      firstProduct: validProducts.length > 0 ? {
-        id: validProducts[0].id,
-        name: validProducts[0].name,
-        hasCategory: !!validProducts[0].category,
-        categoryId: validProducts[0].category?.id
-      } : null,
-      allProductIds: validProducts.map(p => p.id).slice(0, 5)
-    });
-    
-    if (validProducts.length === 0 && data.length > 0) {
-      console.error('❌ All products were filtered out!', {
+    if (validProducts.length === 0 && data.length > 0 && import.meta.env.DEV) {
+      console.error('All products were filtered out!', {
         originalData: data.slice(0, 2),
         reasons: data.map((p, i) => ({
           index: i,
@@ -370,10 +305,8 @@ export const fetchBanners = async (): Promise<Banner[]> => {
 
 export const fetchActiveBanners = async (): Promise<Banner[]> => {
   try {
-    console.log('🌐 Fetching active banners from:', '/banners/active');
     const response = await apiClient.get<any[]>('/banners/active');
     const data = response.data;
-    console.log('📥 Active banners response:', { 
       status: response.status, 
       dataLength: Array.isArray(data) ? data.length : 0,
       data 

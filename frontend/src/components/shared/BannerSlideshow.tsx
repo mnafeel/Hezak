@@ -272,6 +272,8 @@ const BannerSlideshow = () => {
                           }}
                         >
                           <img
+                            loading="lazy"
+                            decoding="async"
                             src={imageElement.imageUrl}
                             alt="Banner element"
                             className="w-full h-full object-contain rounded-lg shadow-lg hover:scale-105 transition-transform"
@@ -524,6 +526,8 @@ const BannerSlideshow = () => {
                           }}
                         >
                           <img
+                            loading="lazy"
+                            decoding="async"
                             src={imageElement.imageUrl}
                             alt="Banner element"
                             className="w-full h-full object-contain rounded-lg shadow-lg hover:scale-105 transition-transform"

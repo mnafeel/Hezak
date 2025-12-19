@@ -68,6 +68,8 @@ const ProductCard = ({ product }: ProductCardProps) => {
         <img
           src={primaryImage}
           alt={product.name}
+          loading="lazy"
+          decoding="async"
           className={`h-full w-full object-cover transition-transform duration-700 group-hover:scale-110 ${
             imageLoaded ? 'opacity-100' : 'opacity-0'
           }`}
