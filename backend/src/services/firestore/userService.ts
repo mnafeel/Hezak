@@ -54,18 +54,43 @@ export const listUsersFirestore = async (): Promise<User[]> => {
       const userData = userDoc.data();
       
       // Get orders for this user
-      const ordersRef = db.collection(COLLECTIONS.ORDERS)
-        .where('userId', '==', userDoc.id)
-        .orderBy('createdAt', 'desc');
+      // Try both string and number formats for userId
+      const userIdString = userDoc.id;
+      const userIdNumber = parseInt(userIdString) || 0;
+      
+      // Try querying with string first
+      let ordersRef = db.collection(COLLECTIONS.ORDERS)
+        .where('userId', '==', userIdString);
       
       let ordersSnapshot;
       try {
-        ordersSnapshot = await ordersRef.get();
+        ordersSnapshot = await ordersRef.orderBy('createdAt', 'desc').get();
       } catch (error: any) {
         // If orderBy fails (missing index), fetch all and sort in memory
-        const allOrdersRef = db.collection(COLLECTIONS.ORDERS)
-          .where('userId', '==', userDoc.id);
-        ordersSnapshot = await allOrdersRef.get();
+        try {
+          ordersSnapshot = await ordersRef.get();
+        } catch (err: any) {
+          // If string query fails, try number format
+          ordersRef = db.collection(COLLECTIONS.ORDERS)
+            .where('userId', '==', userIdNumber);
+          try {
+            ordersSnapshot = await ordersRef.orderBy('createdAt', 'desc').get();
+          } catch (orderByErr: any) {
+            // If orderBy fails, fetch all and sort in memory
+            ordersSnapshot = await ordersRef.get();
+          }
+        }
+      }
+      
+      // If no results with string, try number format
+      if (ordersSnapshot.empty && userIdNumber > 0) {
+        ordersRef = db.collection(COLLECTIONS.ORDERS)
+          .where('userId', '==', userIdNumber);
+        try {
+          ordersSnapshot = await ordersRef.orderBy('createdAt', 'desc').get();
+        } catch (error: any) {
+          ordersSnapshot = await ordersRef.get();
+        }
       }
       
       const orders: Order[] = [];
@@ -148,18 +173,43 @@ export const getUserByIdFirestore = async (id: number): Promise<User> => {
     const userData = userDoc.data();
     
     // Get orders for this user
-    const ordersRef = db.collection(COLLECTIONS.ORDERS)
-      .where('userId', '==', String(id))
-      .orderBy('createdAt', 'desc');
+    // Try both string and number formats for userId
+    const userIdString = String(id);
+    const userIdNumber = id;
+    
+    // Try querying with string first
+    let ordersRef = db.collection(COLLECTIONS.ORDERS)
+      .where('userId', '==', userIdString);
     
     let ordersSnapshot;
     try {
-      ordersSnapshot = await ordersRef.get();
+      ordersSnapshot = await ordersRef.orderBy('createdAt', 'desc').get();
     } catch (error: any) {
       // If orderBy fails (missing index), fetch all and sort in memory
-      const allOrdersRef = db.collection(COLLECTIONS.ORDERS)
-        .where('userId', '==', String(id));
-      ordersSnapshot = await allOrdersRef.get();
+      try {
+        ordersSnapshot = await ordersRef.get();
+      } catch (err: any) {
+        // If string query fails, try number format
+        ordersRef = db.collection(COLLECTIONS.ORDERS)
+          .where('userId', '==', userIdNumber);
+        try {
+          ordersSnapshot = await ordersRef.orderBy('createdAt', 'desc').get();
+        } catch (orderByErr: any) {
+          // If orderBy fails, fetch all and sort in memory
+          ordersSnapshot = await ordersRef.get();
+        }
+      }
+    }
+    
+    // If no results with string, try number format
+    if (ordersSnapshot.empty) {
+      ordersRef = db.collection(COLLECTIONS.ORDERS)
+        .where('userId', '==', userIdNumber);
+      try {
+        ordersSnapshot = await ordersRef.orderBy('createdAt', 'desc').get();
+      } catch (error: any) {
+        ordersSnapshot = await ordersRef.get();
+      }
     }
     
     const orders: Order[] = [];

@@ -110,18 +110,24 @@ export const listProducts = async (categorySlug?: string) => {
     const allProductsSnapshot = await productsRef.get();
     let products: FirestoreProduct[] = [];
 
-    if (productIds && productIds.length > 0) {
-      // Filter products that match the category
-      const productIdSet = new Set(productIds);
-      products = allProductsSnapshot.docs
-        .filter((doc) => productIdSet.has(doc.id))
-        .map((doc) => {
-          const data = doc.data() as FirestoreProduct;
-          return {
-            id: doc.id,
-            ...data
-          } as FirestoreProduct;
-        });
+    if (productIds !== undefined) {
+      // Category filter was applied
+      if (productIds.length > 0) {
+        // Filter products that match the category
+        const productIdSet = new Set(productIds);
+        products = allProductsSnapshot.docs
+          .filter((doc) => productIdSet.has(doc.id))
+          .map((doc) => {
+            const data = doc.data() as FirestoreProduct;
+            return {
+              id: doc.id,
+              ...data
+            } as FirestoreProduct;
+          });
+      } else {
+        // Category exists but has no products - return empty array
+        products = [];
+      }
     } else {
       // Get all products without category filter
       products = snapshotToArray<FirestoreProduct>(allProductsSnapshot);
