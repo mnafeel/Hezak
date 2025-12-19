@@ -989,13 +989,53 @@ const getUserOrdersFirestore = async (userId: number) => {
     throw new Error('Firestore database not initialized');
   }
 
-  const ordersSnapshot = await getCollection(COLLECTIONS.ORDERS)
-    .where('userId', '==', String(userId))
-    .orderBy('createdAt', 'desc')
-    .get();
+  // Try querying with both string and number formats for userId
+  const userIdString = String(userId);
+  const userIdNumber = userId;
+  
+  let ordersSnapshot;
+  
+  // Try querying with string first
+  try {
+    const ordersRef = getCollection(COLLECTIONS.ORDERS)
+      .where('userId', '==', userIdString);
+    
+    try {
+      ordersSnapshot = await ordersRef.orderBy('createdAt', 'desc').get();
+    } catch (orderByError: any) {
+      // If orderBy fails (missing index), fetch all and sort in memory
+      console.warn('OrderBy failed for getUserOrders, fetching all and sorting in memory:', orderByError.message);
+      ordersSnapshot = await ordersRef.get();
+    }
+    
+    // If no results with string, try number format
+    if (ordersSnapshot.empty) {
+      const ordersRefNum = getCollection(COLLECTIONS.ORDERS)
+        .where('userId', '==', userIdNumber);
+      
+      try {
+        ordersSnapshot = await ordersRefNum.orderBy('createdAt', 'desc').get();
+      } catch (orderByError: any) {
+        ordersSnapshot = await ordersRefNum.get();
+      }
+    }
+  } catch (error: any) {
+    console.error('Error fetching user orders from Firestore:', error);
+    throw error;
+  }
+
+  // Sort in memory if orderBy wasn't used
+  const ordersDocs = ordersSnapshot.docs;
+  if (ordersDocs.length > 0) {
+    ordersDocs.sort((a, b) => {
+      const dateA = a.data().createdAt?.toDate?.() || new Date(a.data().createdAt || 0);
+      const dateB = b.data().createdAt?.toDate?.() || new Date(b.data().createdAt || 0);
+      return dateB.getTime() - dateA.getTime(); // Descending
+    });
+  }
 
   const orders = await Promise.all(
-    ordersSnapshot.docs.map((doc) => fetchOrderWithDetails(doc))
+    ordersDocs.map((doc) => fetchOrderWithDetails(doc))
   );
 
   return orders;
