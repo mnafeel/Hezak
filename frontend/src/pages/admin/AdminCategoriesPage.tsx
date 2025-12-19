@@ -281,11 +281,13 @@ const AdminCategoriesPage = () => {
       toast.success('Category products updated');
       setAssignmentCategoryId(null);
       setAssignedProductIds([]);
-      // Invalidate queries to refresh the UI
-      queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] });
-      queryClient.invalidateQueries({ queryKey: ['categories'] });
-      queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
+      // Invalidate and refetch queries to refresh the UI immediately
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'categories'] });
+      await queryClient.invalidateQueries({ queryKey: ['categories'] });
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'products'] });
+      await queryClient.invalidateQueries({ queryKey: ['products'] });
+      // Force refetch to ensure fresh data
+      await queryClient.refetchQueries({ queryKey: ['admin', 'categories'] });
     } catch (error) {
       showError(error, 'Failed to update category products. Please try again.');
     }
