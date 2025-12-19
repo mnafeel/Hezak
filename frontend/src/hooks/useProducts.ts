@@ -48,14 +48,14 @@ export const useProducts = (categorySlug?: string) => {
         throw error;
       }
     },
-    // Remove initialData to prevent caching empty arrays
-    retry: 3, // Retry 3 times on failure
+    // Optimize caching for faster category switching
+    retry: 2, // Retry 2 times on failure (reduced from 3)
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000), // Exponential backoff
-    refetchOnWindowFocus: true,
-    refetchOnMount: true, // Always refetch on mount
+    refetchOnWindowFocus: false, // Don't refetch on window focus for better UX
+    refetchOnMount: false, // Use cached data if available (faster category switching)
     refetchOnReconnect: true, // Refetch when network reconnects
-    staleTime: 0, // Always consider data stale to force refetch
-    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes (was 0, which might cause issues)
+    staleTime: 30 * 1000, // Consider data fresh for 30 seconds (faster category switching)
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
     enabled: true, // Always enable the query
     placeholderData: undefined // Don't use placeholder data
   });
