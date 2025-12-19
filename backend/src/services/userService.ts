@@ -1,6 +1,12 @@
 import { prisma } from '../utils/prisma';
+import { USE_FIRESTORE } from '../config/database';
+import { listUsersFirestore, getUserByIdFirestore } from './firestore/userService';
 
 export const listUsers = async () => {
+  if (USE_FIRESTORE) {
+    return await listUsersFirestore();
+  }
+
   const users = await prisma.user.findMany({
     include: {
       orders: {
@@ -31,6 +37,10 @@ export const listUsers = async () => {
 };
 
 export const getUserById = async (id: number) => {
+  if (USE_FIRESTORE) {
+    return await getUserByIdFirestore(id);
+  }
+
   const user = await prisma.user.findUnique({
     where: { id },
     include: {
