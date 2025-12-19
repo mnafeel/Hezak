@@ -298,7 +298,9 @@ export const fetchBanners = async (): Promise<Banner[]> => {
       })()
     }));
   } catch (error) {
-    console.error('Error fetching banners:', error);
+    if (import.meta.env.DEV) {
+      console.error('Error fetching banners:', error);
+    }
     return [];
   }
 };
@@ -313,7 +315,9 @@ export const fetchActiveBanners = async (): Promise<Banner[]> => {
     });
     
     if (!Array.isArray(data)) {
-      console.warn('⚠️ Active banners response is not an array:', data);
+      if (import.meta.env.DEV) {
+        console.warn('Active banners response is not an array');
+      }
       return [];
     }
     
@@ -335,10 +339,11 @@ export const fetchActiveBanners = async (): Promise<Banner[]> => {
       })()
     }));
     
-    console.log('✅ Parsed active banners:', { count: parsedBanners.length, banners: parsedBanners });
     return parsedBanners;
   } catch (error) {
-    console.error('❌ Error fetching active banners:', error);
+    if (import.meta.env.DEV) {
+      console.error('Error fetching active banners:', error);
+    }
     return [];
   }
 };
