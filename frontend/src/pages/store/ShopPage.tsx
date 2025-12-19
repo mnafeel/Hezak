@@ -119,9 +119,9 @@ const ShopPage = () => {
     : null;
 
   const pageTitle = view === 'top-selling' 
-    ? '🔥 Top Selling Products'
+    ? 'Top Selling Products'
     : view === 'featured'
-    ? '⭐ Featured Selections'
+    ? 'Featured Selections'
     : selectedCategoryName || 'Collections';
 
   const pageDescription = view === 'top-selling'

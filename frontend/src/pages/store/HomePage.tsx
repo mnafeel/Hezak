@@ -160,7 +160,7 @@ const HomePage = () => {
         >
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${getTextColor('primary')}`}>🔥 Top Selling</h2>
+              <h2 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${getTextColor('primary')}`}>Top Selling</h2>
               <p className={`mt-2 text-sm sm:text-base ${getTextColor('secondary')}`}>
                 Our most popular items, loved by customers worldwide
               </p>
@@ -198,7 +198,7 @@ const HomePage = () => {
         >
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${getTextColor('primary')}`}>⭐ Featured Selections</h2>
+              <h2 className={`text-2xl sm:text-3xl md:text-4xl font-bold ${getTextColor('primary')}`}>Featured Selections</h2>
               <p className={`mt-2 text-base ${getTextColor('secondary')}`}>
                 Spotlight pieces celebrating artistry and elegance
               </p>
