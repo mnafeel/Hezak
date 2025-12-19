@@ -20,9 +20,14 @@ const toCategory = async (firestoreCategory: FirestoreCategory, includeProducts 
   let products: any[] = [];
   let productCount = 0;
 
-  // Get unique, valid product IDs
+  // Get unique, valid product IDs - exclude category ID and empty strings
+  const categoryIdString = String(firestoreCategory.id);
   const uniqueProductIds = firestoreCategory.productIds 
-    ? [...new Set(firestoreCategory.productIds.filter(id => id && id.trim() !== ''))]
+    ? [...new Set(firestoreCategory.productIds.filter(id => {
+        const idStr = String(id).trim();
+        // Exclude empty strings and the category ID itself
+        return idStr !== '' && idStr !== categoryIdString;
+      }))]
     : [];
 
   if (includeProducts && uniqueProductIds.length > 0) {
@@ -301,11 +306,26 @@ export const setCategoryProducts = async (categoryId: number, productIds: number
     }
 
     // Convert product IDs to strings (Firestore uses string IDs)
-    const productIdStrings = productIds.map((id) => String(id));
+    // Filter out the category ID itself and ensure all IDs are valid
+    const categoryIdString = String(categoryId);
+    const productIdStrings = productIds
+      .map((id) => String(id))
+      .filter((idStr) => idStr.trim() !== '' && idStr !== categoryIdString);
 
-    // Update category with product IDs
+    // Verify all product IDs exist before updating
+    const productExistencePromises = productIdStrings.map(async (productId) => {
+      const productDoc = await getCollection(COLLECTIONS.PRODUCTS).doc(productId).get();
+      return { id: productId, exists: productDoc.exists };
+    });
+    
+    const productExistenceResults = await Promise.all(productExistencePromises);
+    const validProductIds = productExistenceResults
+      .filter(({ exists }) => exists)
+      .map(({ id }) => id);
+
+    // Update category with valid product IDs only
     await categoryRef.update({
-      productIds: productIdStrings,
+      productIds: validProductIds,
       updatedAt: new Date().toISOString()
     });
 
@@ -323,8 +343,8 @@ export const setCategoryProducts = async (categoryId: number, productIds: number
       const currentCategoryIds = (productData.categoryIds || []) as string[];
       const productDocId = doc.id; // Firestore document ID (should match product ID)
       
-      // Check if this product should be in the category
-      const shouldBeInCategory = productIdStrings.includes(productDocId);
+      // Check if this product should be in the category (use validProductIds, not productIdStrings)
+      const shouldBeInCategory = validProductIds.includes(productDocId);
       const isInCategory = currentCategoryIds.includes(categoryIdString);
       
       if (shouldBeInCategory && !isInCategory) {

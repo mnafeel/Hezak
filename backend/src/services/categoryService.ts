@@ -275,8 +275,10 @@ export const setCategoryProducts = async (
   productIds: number[]
 ): Promise<CategoryListPayload> => {
   try {
-    // Ensure productIds is an array
-    const validProductIds = Array.isArray(productIds) ? productIds.filter((id): id is number => typeof id === 'number' && id > 0) : [];
+    // Ensure productIds is an array and filter out the category ID itself
+    const validProductIds = Array.isArray(productIds) 
+      ? productIds.filter((id): id is number => typeof id === 'number' && id > 0 && id !== categoryId)
+      : [];
     
     return prisma.$transaction(async (tx) => {
       // Verify category exists
