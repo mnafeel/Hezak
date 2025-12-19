@@ -32,34 +32,25 @@ const ShopPage = () => {
       console.error('❌ ShopPage: Product fetch error:', productErrorDetails);
     }
   }, [productError, productErrorDetails]);
-  const allProducts: Product[] = (() => {
-    console.log('ShopPage: allProductsData:', { 
-      isArray: Array.isArray(allProductsData), 
-      length: Array.isArray(allProductsData) ? allProductsData.length : 'not array',
-      isLoading: productLoading,
-      data: allProductsData
-    });
+  const allProducts: Product[] = useMemo(() => {
+    // During loading, data is undefined - return empty array
+    if (productLoading || !allProductsData) {
+      return [];
+    }
     
     if (!Array.isArray(allProductsData)) {
-      console.warn('ShopPage: allProductsData is not an array:', allProductsData);
       return [];
     }
     
     const filtered = allProductsData.filter((p): p is Product => {
       if (!p || !p.id || !p.name) {
-        console.warn('ShopPage: Filtered out invalid product:', p);
         return false;
       }
       return true;
     });
     
-    console.log('ShopPage: Filtered products:', { 
-      original: allProductsData.length, 
-      filtered: filtered.length 
-    });
-    
     return filtered;
-  })();
+  }, [allProductsData, productLoading]);
 
   // Sync selectedCategory with URL param
   useEffect(() => {
