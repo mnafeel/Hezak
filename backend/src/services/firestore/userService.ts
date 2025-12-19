@@ -1,6 +1,47 @@
 import { db } from '../../utils/firebaseAdmin';
 import { COLLECTIONS } from '../../utils/firestore';
-import type { User, Order } from '../../types';
+
+// Define types locally since they're not exported from a types file
+interface OrderItem {
+  id: number;
+  orderId: number;
+  productId: number;
+  quantity: number;
+  price: number;
+  selectedColor: any;
+  selectedSize: any;
+  product: any;
+}
+
+interface Order {
+  id: number;
+  userId: number;
+  total: number;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+  orderItems: OrderItem[];
+  orderSource: string;
+  trackingId: string | null;
+  courierCompany: string | null;
+  trackingLink: string | null;
+}
+
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  city: string | null;
+  state: string | null;
+  postalCode: string | null;
+  country: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  orders: Order[];
+}
 
 export const listUsersFirestore = async (): Promise<User[]> => {
   try {

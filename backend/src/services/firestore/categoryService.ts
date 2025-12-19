@@ -350,7 +350,6 @@ export const setCategoryProducts = async (categoryId: number, productIds: number
     
     // Get all products
     const allProductsSnapshot = await getCollection(COLLECTIONS.PRODUCTS).get();
-    const categoryIdString = String(categoryId);
     
     // Find products that need updates
     allProductsSnapshot.docs.forEach((doc) => {
