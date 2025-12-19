@@ -90,13 +90,13 @@ export const listProducts = async (categorySlug?: string) => {
       const categoryIdString = String(categoryDoc.id);
       
       // Get productIds directly from category document (much faster!)
-      const categoryProductIds = categoryData.productIds || [];
+      const categoryProductIds = (categoryData.productIds || []) as (string | number)[];
       
       // Clean productIds: remove duplicates, empty strings, and the category ID itself
       productIds = [...new Set(categoryProductIds
         .map(id => String(id).trim())
         .filter(idStr => idStr !== '' && idStr !== categoryIdString)
-      )];
+      )] as string[];
     }
 
     let products: FirestoreProduct[] = [];
