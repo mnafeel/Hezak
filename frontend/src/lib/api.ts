@@ -309,10 +309,6 @@ export const fetchActiveBanners = async (): Promise<Banner[]> => {
   try {
     const response = await apiClient.get<any[]>('/banners/active');
     const data = response.data;
-      status: response.status, 
-      dataLength: Array.isArray(data) ? data.length : 0,
-      data 
-    });
     
     if (!Array.isArray(data)) {
       if (import.meta.env.DEV) {
