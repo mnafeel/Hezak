@@ -587,8 +587,12 @@ const fetchOrderWithDetails = async (orderDoc: any) => {
   // Use numeric ID from document data if available, otherwise use document ID
   const orderId = orderData.id || orderDocId;
 
-  // Fetch user
-  const userDoc = await getCollection(COLLECTIONS.USERS).doc(orderData.userId).get();
+  // Fetch user - try both string and number formats
+  let userDoc = await getCollection(COLLECTIONS.USERS).doc(String(orderData.userId)).get();
+  if (!userDoc.exists && typeof orderData.userId === 'number') {
+    // Try with number format
+    userDoc = await getCollection(COLLECTIONS.USERS).doc(String(orderData.userId)).get();
+  }
   const userData = userDoc.exists ? userDoc.data() : null;
 
   // Fetch order items - search by both document ID and numeric ID for compatibility
