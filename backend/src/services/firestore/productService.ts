@@ -75,7 +75,7 @@ export const listProducts = async (categorySlug?: string) => {
     let productIds: string[] | undefined = undefined;
 
     if (categorySlug) {
-      // Find category by slug
+      // Find category by slug and get its productIds directly
       const categoriesSnapshot = await getCollection(COLLECTIONS.CATEGORIES)
         .where('slug', '==', categorySlug)
         .limit(1)
@@ -85,51 +85,47 @@ export const listProducts = async (categorySlug?: string) => {
         return [];
       }
 
-      const categoryId = categoriesSnapshot.docs[0].id;
-
-      // Get all products with this category
-      // Check both string and number formats for categoryId
-      const allProductsSnapshot = await productsRef.get();
-      productIds = allProductsSnapshot.docs
-        .filter((doc) => {
-          const data = doc.data() as FirestoreProduct;
-          if (!data.categoryIds || !Array.isArray(data.categoryIds)) {
-            return false;
-          }
-          // Check if categoryId (string) matches any categoryId in the array (could be string or number)
-          return data.categoryIds.some((id) => {
-            const idStr = String(id);
-            const catIdStr = String(categoryId);
-            return idStr === catIdStr;
-          });
-        })
-        .map((doc) => doc.id);
+      const categoryDoc = categoriesSnapshot.docs[0];
+      const categoryData = categoryDoc.data();
+      const categoryIdString = String(categoryDoc.id);
+      
+      // Get productIds directly from category document (much faster!)
+      const categoryProductIds = categoryData.productIds || [];
+      
+      // Clean productIds: remove duplicates, empty strings, and the category ID itself
+      productIds = [...new Set(categoryProductIds
+        .map(id => String(id).trim())
+        .filter(idStr => idStr !== '' && idStr !== categoryIdString)
+      )];
     }
 
-    // Get all products and filter in memory (Firestore doesn't support __name__ in where clauses)
-    const allProductsSnapshot = await productsRef.get();
     let products: FirestoreProduct[] = [];
 
     if (productIds !== undefined) {
       // Category filter was applied
       if (productIds.length > 0) {
-        // Filter products that match the category
-        const productIdSet = new Set(productIds);
-        products = allProductsSnapshot.docs
-          .filter((doc) => productIdSet.has(doc.id))
-          .map((doc) => {
-            const data = doc.data() as FirestoreProduct;
+        // Batch fetch products by their IDs (much faster than fetching all)
+        const productPromises = productIds.map(async (productId) => {
+          const productDoc = await productsRef.doc(productId).get();
+          if (productDoc.exists) {
+            const data = productDoc.data() as FirestoreProduct;
             return {
-              id: doc.id,
+              id: productDoc.id,
               ...data
             } as FirestoreProduct;
-          });
+          }
+          return null;
+        });
+        
+        const productResults = await Promise.all(productPromises);
+        products = productResults.filter((p): p is FirestoreProduct => p !== null);
       } else {
         // Category exists but has no products - return empty array
-        products = [];
+        return [];
       }
     } else {
       // Get all products without category filter
+      const allProductsSnapshot = await productsRef.get();
       products = snapshotToArray<FirestoreProduct>(allProductsSnapshot);
     }
     
@@ -140,7 +136,75 @@ export const listProducts = async (categorySlug?: string) => {
       return dateB - dateA; // Descending
     });
     
-    return Promise.all(products.map(toProduct));
+    // Batch fetch all categories at once to avoid N+1 queries
+    const allCategoryIds = new Set<string>();
+    products.forEach(product => {
+      if (product.categoryIds && Array.isArray(product.categoryIds)) {
+        product.categoryIds.forEach(id => {
+          allCategoryIds.add(String(id));
+        });
+      }
+    });
+    
+    // Fetch all categories in parallel
+    const categoryPromises = Array.from(allCategoryIds).map(async (categoryId) => {
+      const categoryDoc = await getCollection(COLLECTIONS.CATEGORIES).doc(categoryId).get();
+      if (categoryDoc.exists) {
+        const categoryData = categoryDoc.data();
+        return {
+          id: categoryDoc.id,
+          ...categoryData
+        };
+      }
+      return null;
+    });
+    
+    const categoryResults = await Promise.all(categoryPromises);
+    const categoriesMap = new Map(
+      categoryResults
+        .filter((c): c is any => c !== null)
+        .map(cat => [String(cat.id), cat])
+    );
+    
+    // Convert products using the pre-fetched categories
+    return products.map((product) => {
+      const categories = [];
+      
+      if (product.categoryIds && Array.isArray(product.categoryIds)) {
+        product.categoryIds.forEach((categoryId) => {
+          const category = categoriesMap.get(String(categoryId));
+          if (category) {
+            categories.push(category);
+          }
+        });
+      }
+
+      return {
+        id: parseInt(product.id) || product.id,
+        name: product.name,
+        description: product.description,
+        price: product.priceCents / 100,
+        priceCents: product.priceCents,
+        imageUrl: product.imageUrl,
+        gallery: product.gallery || [],
+        colors: product.colors || [],
+        sizes: product.sizes || [],
+        itemType: product.itemType || '',
+        inventory: product.inventory || 0,
+        inventoryVariants: product.inventoryVariants || [],
+        isFeatured: product.isFeatured || false,
+        createdAt: toDate(product.createdAt),
+        updatedAt: toDate(product.updatedAt),
+        category: categories[0] || null,
+        categories: categories.map((cat) => ({
+          id: parseInt(cat.id) || cat.id,
+          productId: parseInt(product.id) || product.id,
+          categoryId: parseInt(cat.id) || cat.id,
+          createdAt: toDate(product.createdAt),
+          category: cat
+        }))
+      };
+    });
   } catch (error) {
     console.error('Error in listProducts:', error);
     throw error;
