@@ -126,26 +126,64 @@ const createOrderFirestore = async (input: CreateOrderInput) => {
   const usersRef = getCollection(COLLECTIONS.USERS);
   
   if (input.userId) {
-    // User is logged in - find by ID
-    const userDoc = await usersRef.doc(String(input.userId)).get();
+    // User is logged in - try to find by ID first
+    let userDoc = await usersRef.doc(String(input.userId)).get();
+    
     if (!userDoc.exists) {
-      throw new Error('User not found');
+      // User not found by ID - try to find by email (user might have been created in Prisma)
+      const userQuery = await usersRef.where('email', '==', input.customer.email).limit(1).get();
+      
+      if (!userQuery.empty) {
+        // Found by email - use this user
+        userDoc = userQuery.docs[0];
+        userId = userDoc.id;
+        
+        // Update user info with checkout details
+        await userDoc.ref.update({
+          name: input.customer.name,
+          phone: input.customer.phone || null,
+          addressLine1: input.customer.addressLine1,
+          addressLine2: input.customer.addressLine2 || null,
+          city: input.customer.city,
+          state: input.customer.state || null,
+          postalCode: input.customer.postalCode,
+          country: input.customer.country,
+          updatedAt: toTimestamp(new Date())
+        });
+      } else {
+        // User doesn't exist in Firestore - create them
+        // Use the userId from input as the document ID for consistency
+        const newUserRef = usersRef.doc(String(input.userId));
+        await newUserRef.set({
+          name: input.customer.name,
+          email: input.customer.email,
+          phone: input.customer.phone || null,
+          addressLine1: input.customer.addressLine1,
+          addressLine2: input.customer.addressLine2 || null,
+          city: input.customer.city,
+          state: input.customer.state || null,
+          postalCode: input.customer.postalCode,
+          country: input.customer.country,
+          createdAt: toTimestamp(new Date()),
+          updatedAt: toTimestamp(new Date())
+        });
+        userId = newUserRef.id;
+      }
+    } else {
+      // User found by ID - update info
+      await usersRef.doc(String(input.userId)).update({
+        name: input.customer.name,
+        phone: input.customer.phone || null,
+        addressLine1: input.customer.addressLine1,
+        addressLine2: input.customer.addressLine2 || null,
+        city: input.customer.city,
+        state: input.customer.state || null,
+        postalCode: input.customer.postalCode,
+        country: input.customer.country,
+        updatedAt: toTimestamp(new Date())
+      });
+      userId = userDoc.id;
     }
-    
-    // Update user info with checkout details
-    await usersRef.doc(String(input.userId)).update({
-      name: input.customer.name,
-      phone: input.customer.phone || null,
-      addressLine1: input.customer.addressLine1,
-      addressLine2: input.customer.addressLine2 || null,
-      city: input.customer.city,
-      state: input.customer.state || null,
-      postalCode: input.customer.postalCode,
-      country: input.customer.country,
-      updatedAt: toTimestamp(new Date())
-    });
-    
-    userId = userDoc.id;
   } else {
     // Guest checkout - find or create by email
     const userQuery = await usersRef.where('email', '==', input.customer.email).limit(1).get();
