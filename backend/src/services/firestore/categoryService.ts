@@ -32,11 +32,11 @@ const toCategory = async (firestoreCategory: FirestoreCategory, includeProducts 
 
   if (includeProducts && uniqueProductIds.length > 0) {
     const productPromises = uniqueProductIds.map(async (productId) => {
-      const productDoc = await getCollection(COLLECTIONS.PRODUCTS).doc(productId).get();
+      const productDoc = await getCollection(COLLECTIONS.PRODUCTS).doc(String(productId)).get();
       if (productDoc.exists) {
         const productData = productDoc.data();
         return {
-          id: productDoc.id,
+          id: parseInt(productDoc.id) || productDoc.id, // Return numeric ID if possible
           name: productData?.name || '',
           itemType: productData?.itemType || ''
         };
@@ -50,7 +50,7 @@ const toCategory = async (firestoreCategory: FirestoreCategory, includeProducts 
   } else if (!includeProducts && uniqueProductIds.length > 0) {
     // Verify products exist and count only valid ones
     const productExistencePromises = uniqueProductIds.map(async (productId) => {
-      const productDoc = await getCollection(COLLECTIONS.PRODUCTS).doc(productId).get();
+      const productDoc = await getCollection(COLLECTIONS.PRODUCTS).doc(String(productId)).get();
       return productDoc.exists;
     });
     

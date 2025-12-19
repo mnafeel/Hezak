@@ -250,28 +250,16 @@ const AdminCategoriesPage = () => {
 
   const startAssigning = (category: Category) => {
     setAssignmentCategoryId(category.id);
-    // Get product IDs from category.products if available
-    const productIdsFromCategory = category.products?.map((product) => product.id) ?? [];
-    
-    // Also check products array to see which products have this category in their categories array
-    const productIdsFromProducts = products
-      .filter((product) => {
-        // Check if product has this category in its categories array
-        if (product.categories && Array.isArray(product.categories)) {
-          return product.categories.some((pc) => 
-            pc.categoryId === category.id || 
-            pc.category?.id === category.id ||
-            (typeof pc.id === 'number' && pc.id === category.id)
-          );
-        }
-        // Fallback to single category
-        return product.category?.id === category.id;
+    // Use only category.products as the source of truth (from backend)
+    // Convert product IDs to numbers and filter out any invalid values
+    const productIdsFromCategory = (category.products || [])
+      .map((product) => {
+        const id = typeof product.id === 'string' ? parseInt(product.id, 10) : product.id;
+        return isNaN(id) ? null : id;
       })
-      .map((product) => product.id);
+      .filter((id): id is number => id !== null && id > 0 && id !== category.id);
     
-    // Combine both sources and remove duplicates
-    const allProductIds = [...new Set([...productIdsFromCategory, ...productIdsFromProducts])];
-    setAssignedProductIds(allProductIds);
+    setAssignedProductIds(productIdsFromCategory);
   };
 
   const toggleProductSelection = (productId: number) => {
