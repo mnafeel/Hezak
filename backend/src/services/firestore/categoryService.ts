@@ -92,7 +92,22 @@ export const listCategories = async (options: { includeProducts?: boolean } = {}
       return a.name.localeCompare(b.name);
     });
     
-    return Promise.all(categories.map((cat) => toCategory(cat, options.includeProducts)));
+    // Process categories and ensure productIds are cleaned before counting
+    const processedCategories = await Promise.all(
+      categories.map(async (cat) => {
+        // Clean productIds array - remove category ID, duplicates, and invalid IDs
+        const categoryIdString = String(cat.id);
+        if (cat.productIds && Array.isArray(cat.productIds)) {
+          cat.productIds = [...new Set(cat.productIds.filter(id => {
+            const idStr = String(id).trim();
+            return idStr !== '' && idStr !== categoryIdString;
+          }))];
+        }
+        return toCategory(cat, options.includeProducts);
+      })
+    );
+    
+    return processedCategories;
   } catch (error) {
     console.error('Error in listCategories:', error);
     throw error;
