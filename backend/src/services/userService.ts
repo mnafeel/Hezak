@@ -2,9 +2,10 @@ import { prisma } from '../utils/prisma';
 import { USE_FIRESTORE } from '../config/database';
 import { listUsersFirestore, getUserByIdFirestore } from './firestore/userService';
 
-export const listUsers = async () => {
+// Firestore and Prisma return different shapes; keep this loosely typed
+export const listUsers = async (): Promise<any[]> => {
   if (USE_FIRESTORE) {
-    return await listUsersFirestore();
+    return (await listUsersFirestore()) as any[];
   }
 
   const users = await prisma.user.findMany({
@@ -33,12 +34,12 @@ export const listUsers = async () => {
     }
   });
 
-  return users;
+  return users as any[];
 };
 
-export const getUserById = async (id: number) => {
+export const getUserById = async (id: number): Promise<any> => {
   if (USE_FIRESTORE) {
-    return await getUserByIdFirestore(id);
+    return (await getUserByIdFirestore(id)) as any;
   }
 
   const user = await prisma.user.findUnique({
@@ -69,7 +70,7 @@ export const getUserById = async (id: number) => {
     throw new Error('User not found');
   }
 
-  return user;
+  return user as any;
 };
 
 

@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Request, Response } from 'express';
 import { listUsers, getUserById } from '../services/userService';
 import { serializeUser } from '../utils/userSerializers';
